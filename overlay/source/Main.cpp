@@ -36,9 +36,9 @@ namespace {
 
     inline std::string MakeActiveAmiiboText() {
         if(IsActiveAmiiboValid()) {
-            return std::string("Active virtual amiibo: ") + g_active_amiibo_data.name;
+            return std::string("激活的虚拟amiibo：") + g_active_amiibo_data.name;
         }
-        return "No active virtual amiibo";
+        return "没有激活的虚拟amiibo";
     }
 
     inline std::string MakeTitleText() {
@@ -50,9 +50,9 @@ namespace {
 
     inline std::string MakeStatusText() {
         if(!g_emuiibo_init_ok) {
-            return "emuiibo was not accessed.";
+            return "emuiibo无法被访问。";
         }
-        std::string msg = "Emulation: ";
+        std::string msg = "仿真：";
         auto e_status = emu::GetEmulationStatus();
         switch(e_status) {
             case emu::EmulationStatus::On: {
@@ -60,28 +60,28 @@ namespace {
                 auto v_status = emu::GetActiveVirtualAmiiboStatus();
                 switch(v_status) {
                     case emu::VirtualAmiiboStatus::Invalid: {
-                        msg += "No active virtual amiibo.";
+                        msg += "没有激活的虚拟amiibo。";
                         break;
                     }
                     case emu::VirtualAmiiboStatus::Connected: {
-                        msg += "Virtual amiibo: ";
+                        msg += "虚拟amiibo：";
                         msg += g_active_amiibo_data.name;
-                        msg += " (connected - select to disconnect)";
+                        msg += "（已连接 - 选择以断开）";
                         break;
                     }
                     case emu::VirtualAmiiboStatus::Disconnected: {
-                        msg += "Virtual amiibo: ";
+                        msg += "虚拟amiibo：";
                         msg += g_active_amiibo_data.name;
-                        msg += " (disconnected - select to connect)";
+                        msg += "（已断开 - 选择以连接）";
                         break;
                     }
                 }
                 msg += "\n";
                 if(g_current_app_intercepted) {
-                    msg += "Current game is being intercepted by emuiibo.";
+                    msg += "当前游戏已被emuiibo截获。";
                 }
                 else {
-                    msg += "Current game is not being intercepted.";
+                    msg += "当前游戏没有被emuiibo截获。";
                 }
                 break;
             }
@@ -173,7 +173,7 @@ class AmiiboList : public tsl::Gui {
             });
 
             selected_header = new tsl::elm::BigCategoryHeader(MakeActiveAmiiboText(), true);
-            count_header = new tsl::elm::CategoryHeader("Available virtual amiibos (" + std::to_string(count) + ")", true);
+            count_header = new tsl::elm::CategoryHeader("可用的虚拟amiibos （" + std::to_string(count) + "）", true);
 
             header_list->addItem(selected_header);
             header_list->addItem(count_header);
@@ -254,7 +254,7 @@ class CategoryList : public tsl::Gui {
                 }
             });
 
-            this->count_header = new tsl::elm::CategoryHeader("Available categories (" + std::to_string(count) + ")", true);
+            this->count_header = new tsl::elm::CategoryHeader("可用的类别 （" + std::to_string(count) + "）", true);
 
             header_list->addItem(this->selected_header);
             header_list->addItem(this->count_header);
@@ -301,7 +301,7 @@ class MainGui : public tsl::Gui {
                 auto status = emu::GetEmulationStatus();
 
                 auto *toggle_item = new tsl::elm::NamedStepTrackBar("\u22EF", { "Off", "On" });
-                auto *select_item = new tsl::elm::SmallListItem("View amiibo");
+                auto *select_item = new tsl::elm::SmallListItem("查看amiibo");
 
                 u8 toggle_progress;
                 switch(status) {
@@ -337,7 +337,7 @@ class MainGui : public tsl::Gui {
                     return false;
                 });
 
-                list->addItem(new tsl::elm::BigCategoryHeader("Manage emulation (on / off)", true));
+                list->addItem(new tsl::elm::BigCategoryHeader("管理仿真（on | off）", true));
                 list->addItem(toggle_item);
                 list->addItem(this->amiibo_header);
                 list->addItem(select_item);

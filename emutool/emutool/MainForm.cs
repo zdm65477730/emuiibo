@@ -33,12 +33,12 @@ namespace emutool
         {
             InitializeComponent();
             DialogCaption = "emutool v" + Assembly.GetExecutingAssembly().GetName().Version.ToString();
-            Text = DialogCaption + " - emuiibo's tool for virtual amiibo creation";
+            Text = DialogCaption + " - emuiibo的虚拟amiibo创建工具";
             Amiibos = AmiiboAPI.GetAllAmiibos();
 
             if(HasAmiibos())
             {
-                toolStripStatusLabel1.Text = "AmiiboAPI was accessed - amiibo list was loaded.";
+                toolStripStatusLabel1.Text = "Amiibo API已被访问 - amiibo列表已加载。";
                 AmiiboSeries = Amiibos.GetAmiiboSeries();
 
                 if(AmiiboSeries.Any())
@@ -52,7 +52,7 @@ namespace emutool
             }
             else
             {
-                toolStripStatusLabel1.Text = "Unable to download amiibo list from AmiiboAPI.";
+                toolStripStatusLabel1.Text = "无法通过Amiibo API下载amiibo列表。";
                 toolStripStatusLabel1.Image = Properties.Resources.ErrorIcon;
                 groupBox1.Enabled = false;
                 groupBox2.Enabled = false;
@@ -119,14 +119,14 @@ namespace emutool
                         }
                         if(!string.IsNullOrEmpty(emuiibo_dir))
                         {
-                            MessageBox.Show($"Emuiibo directory was found in drive '{drive.VolumeLabel}', so defaulting to that directory.", DialogCaption, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            MessageBox.Show($"在驱动器中找到Emuiibo目录 '{drive.VolumeLabel}'，所以默认到那个目录。", DialogCaption, MessageBoxButtons.OK, MessageBoxIcon.Information);
                         }
                     }
                 }
             }
             var dialog = new FolderBrowserDialog
             {
-                Description = "Select root directory to generate the virtual amiibo on",
+                Description = "选择根目录以在其上生成虚拟amiibo",
                 ShowNewFolderButton = false,
                 SelectedPath = emuiibo_dir,
             };
@@ -166,13 +166,13 @@ namespace emutool
                 // Validate the FTP address
                 if (!IPAddress.TryParse(FtpAddressBox.Text, out ftp_ip))
                 {
-                    ShowErrorBox("FTP address is invalid");
+                    ShowErrorBox("FTP地址无效");
                     return;
                 }
 
                 if (!int.TryParse(FtpPortBox.Text, out ftp_port))
                 {
-                    ShowErrorBox("FTP port is invalid");
+                    ShowErrorBox("FTP端口无效");
                     return;
                 }
             }
@@ -215,7 +215,7 @@ namespace emutool
                     client.Disconnect();
                 }
 
-                ExceptionUtils.Unless(success, "Error during FTP upload, please try again");
+                ExceptionUtils.Unless(success, "FTP上传出错，请重试");
 
                 // Clean the temp directory
                 Directory.Delete(ftp_tmp_path, true);
@@ -251,14 +251,14 @@ namespace emutool
                     var cur_amiibo = CurrentSeriesAmiibos[AmiiboComboBox.SelectedIndex];
                     if (string.IsNullOrEmpty(AmiiboNameBox.Text))
                     {
-                        ShowErrorBox("No amiibo name was specified.");
+                        ShowErrorBox("未指定amiibo名称。");
                         return;
                     }
 
                     bool use_name_as_dir = UseNameCheck.Checked;
                     if (!use_name_as_dir && string.IsNullOrEmpty(DirectoryNameBox.Text))
                     {
-                        ShowErrorBox("No amiibo directory name was specified.");
+                        ShowErrorBox("未指定amiibo目录名。");
                         return;
                     }
 
@@ -270,7 +270,7 @@ namespace emutool
                     }
 
                     CreateAmiibo(name, dir_name, base_dir, cur_amiibo);
-                    MessageBox.Show("The virtual amiibo was successfully created.", DialogCaption, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("已成功创建虚拟amiibo。", DialogCaption, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
                 else
                 {
@@ -292,15 +292,15 @@ namespace emutool
                             }
                             else
                             {
-                                MessageBox.Show("Ey, no amiibos");
+                                MessageBox.Show("没有amiibos");
                             }
                         }
                     }
                     else
                     {
-                        MessageBox.Show("Ey, no series");
+                        MessageBox.Show("没有amiibos序列");
                     }
-                    MessageBox.Show("All virtual amiibos were successfully created.", DialogCaption, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("已成功创建所有虚拟amiibo。", DialogCaption, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             }
             catch (Exception ex)
@@ -311,7 +311,7 @@ namespace emutool
             LastPathLabel.Visible = LastPathCheck.Visible = !string.IsNullOrEmpty(LastUsedPath);
             if (LastPathLabel.Visible)
             {
-                LastPathLabel.Text = "Last path: " + LastUsedPath;
+                LastPathLabel.Text = "最后路径：" + LastUsedPath;
             }
         }
 
@@ -319,7 +319,7 @@ namespace emutool
         {
             if (RandomizeUuidCheck.Checked)
             {
-                if (MessageBox.Show("Please, keep in mind that the random UUID feature might cause in some cases (Smash Bros., for example) the amiibo not to be recognized.\n(for example, when saving data to the amiibo, it could not be recognized as the original one)\n\nWould you really like to enable this feature?", "emutool - Randomize UUID", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes)
+                if (MessageBox.Show("请记住，随机UUID功能在某些情况下（例如，大乱斗）可能会导致无法识别amiibo。\n（例如，将数据保存到amiibo时，无法将其识别为原始数据）\n\n是否确实要启用此功能？", "emutool - 随机UUID", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes)
                 {
                     RandomizeUuidCheck.Checked = false;
                 }
@@ -343,9 +343,9 @@ namespace emutool
 
         private void AboutButton_Click(object sender, EventArgs e)
         {
-            if(MessageBox.Show("For more information about emuiibo, check it's GitHub repository's README.", DialogCaption, MessageBoxButtons.OK, MessageBoxIcon.Information) == DialogResult.OK)
+            if(MessageBox.Show("有关emuiibo的更多信息，请查看GitHub代码库的README。", DialogCaption, MessageBoxButtons.OK, MessageBoxIcon.Information) == DialogResult.OK)
             {
-                Process.Start("https://github.com/XorTroll/emuiibo");
+                Process.Start("https://github.com/zdm65477730/emuiibo");
             }
         }
 

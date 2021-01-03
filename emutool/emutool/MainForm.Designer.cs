@@ -20,7 +20,7 @@
             base.Dispose(disposing);
         }
 
-        #region Código generado por el Diseñador de Windows Forms
+        #region 由Windows窗体设计器生成的代码
 
         /// <summary>
         /// Método necesario para admitir el Diseñador. No se puede modificar
@@ -82,7 +82,7 @@
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(43, 13);
             this.label1.TabIndex = 2;
-            this.label1.Text = "Name:";
+            this.label1.Text = "名称：";
             // 
             // RandomizeUuidCheck
             // 
@@ -91,7 +91,7 @@
             this.RandomizeUuidCheck.Name = "RandomizeUuidCheck";
             this.RandomizeUuidCheck.Size = new System.Drawing.Size(168, 17);
             this.RandomizeUuidCheck.TabIndex = 4;
-            this.RandomizeUuidCheck.Text = "Randomize UUID in emulation";
+            this.RandomizeUuidCheck.Text = "在仿真中随机化UUID";
             this.RandomizeUuidCheck.UseVisualStyleBackColor = true;
             this.RandomizeUuidCheck.CheckedChanged += new System.EventHandler(this.CheckBox1_CheckedChanged);
             // 
@@ -126,7 +126,7 @@
             this.groupBox2.Size = new System.Drawing.Size(396, 341);
             this.groupBox2.TabIndex = 6;
             this.groupBox2.TabStop = false;
-            this.groupBox2.Text = "2 - Generation settings";
+            this.groupBox2.Text = "2 - 生成设置";
             // 
             // CreateAllCheck
             // 
@@ -135,7 +135,7 @@
             this.CreateAllCheck.Name = "CreateAllCheck";
             this.CreateAllCheck.Size = new System.Drawing.Size(294, 17);
             this.CreateAllCheck.TabIndex = 11;
-            this.CreateAllCheck.Text = "Generate all amiibos at once, instead of the selected one";
+            this.CreateAllCheck.Text = "一次生成所有amiibo，而不是选定的amiibo";
             this.CreateAllCheck.UseVisualStyleBackColor = true;
             this.CreateAllCheck.CheckedChanged += new System.EventHandler(this.generateAllAmibosCheck_CheckedChanged);
             // 
@@ -148,7 +148,7 @@
             this.UseNameCheck.Name = "UseNameCheck";
             this.UseNameCheck.Size = new System.Drawing.Size(160, 17);
             this.UseNameCheck.TabIndex = 10;
-            this.UseNameCheck.Text = "Use name as directory name";
+            this.UseNameCheck.Text = "使用名称作为目录名";
             this.UseNameCheck.UseVisualStyleBackColor = true;
             this.UseNameCheck.CheckedChanged += new System.EventHandler(this.CheckBox3_CheckedChanged);
             // 
@@ -169,7 +169,7 @@
             this.label8.Name = "label8";
             this.label8.Size = new System.Drawing.Size(34, 13);
             this.label8.TabIndex = 13;
-            this.label8.Text = "Port:";
+            this.label8.Text = "端口：";
             // 
             // label9
             // 
@@ -196,7 +196,7 @@
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(96, 13);
             this.label5.TabIndex = 8;
-            this.label5.Text = "Directory name:";
+            this.label5.Text = "目录名：";
             // 
             // SaveImageCheck
             // 
@@ -205,7 +205,7 @@
             this.SaveImageCheck.Name = "SaveImageCheck";
             this.SaveImageCheck.Size = new System.Drawing.Size(245, 17);
             this.SaveImageCheck.TabIndex = 7;
-            this.SaveImageCheck.Text = "Save the amiibo\'s image along with the amiibo.";
+            this.SaveImageCheck.Text = "将amiibo的图像与amiibo一起保存。";
             this.SaveImageCheck.UseVisualStyleBackColor = true;
             // 
             // FtpAddressBox
@@ -224,7 +224,7 @@
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(56, 13);
             this.label6.TabIndex = 11;
-            this.label6.Text = "Address:";
+            this.label6.Text = "地址：";
             // 
             // FtpSaveCheck
             // 
@@ -233,7 +233,7 @@
             this.FtpSaveCheck.Name = "FtpSaveCheck";
             this.FtpSaveCheck.Size = new System.Drawing.Size(184, 17);
             this.FtpSaveCheck.TabIndex = 11;
-            this.FtpSaveCheck.Text = "Upload generated amiibos to FTP";
+            this.FtpSaveCheck.Text = "将生成的amiibos上传到FTP";
             this.FtpSaveCheck.UseVisualStyleBackColor = true;
             this.FtpSaveCheck.CheckedChanged += new System.EventHandler(this.chkFTP_CheckedChanged);
             // 
@@ -243,7 +243,7 @@
             this.CreateButton.Name = "CreateButton";
             this.CreateButton.Size = new System.Drawing.Size(361, 34);
             this.CreateButton.TabIndex = 7;
-            this.CreateButton.Text = "Create virtual amiibo";
+            this.CreateButton.Text = "创建虚拟amiibo";
             this.CreateButton.UseVisualStyleBackColor = true;
             this.CreateButton.Click += new System.EventHandler(this.Button1_Click);
             // 
@@ -256,7 +256,7 @@
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(291, 13);
             this.label3.TabIndex = 8;
-            this.label3.Text = "In console, emuiibo will generate a random mii for the amiibo.";
+            this.label3.Text = "在控制台中，emuiibo将为amiibo生成一个随机的mii。";
             // 
             // groupBox3
             // 
@@ -269,7 +269,7 @@
             this.groupBox3.Size = new System.Drawing.Size(396, 112);
             this.groupBox3.TabIndex = 9;
             this.groupBox3.TabStop = false;
-            this.groupBox3.Text = "3 - Generate the virtual amiibo";
+            this.groupBox3.Text = "3 - 生成虚拟amiibo";
             // 
             // LastPathCheck
             // 
@@ -280,7 +280,7 @@
             this.LastPathCheck.Name = "LastPathCheck";
             this.LastPathCheck.Size = new System.Drawing.Size(155, 17);
             this.LastPathCheck.TabIndex = 17;
-            this.LastPathCheck.Text = "Create in the last used path\n";
+            this.LastPathCheck.Text = "在上次使用的路径中创建\n";
             this.LastPathCheck.UseVisualStyleBackColor = true;
             this.LastPathCheck.Visible = false;
             // 
@@ -293,7 +293,7 @@
             this.LastPathLabel.Name = "LastPathLabel";
             this.LastPathLabel.Size = new System.Drawing.Size(42, 13);
             this.LastPathLabel.TabIndex = 16;
-            this.LastPathLabel.Text = "Dummy";
+            this.LastPathLabel.Text = "占位";
             this.LastPathLabel.Visible = false;
             // 
             // label7
@@ -314,7 +314,7 @@
             this.statusStrip1.Size = new System.Drawing.Size(826, 22);
             this.statusStrip1.SizingGrip = false;
             this.statusStrip1.TabIndex = 10;
-            this.statusStrip1.Text = "statusStrip1";
+            this.statusStrip1.Text = "状态条1";
             // 
             // toolStripStatusLabel2
             // 
@@ -370,7 +370,7 @@
             this.groupBox1.Size = new System.Drawing.Size(396, 547);
             this.groupBox1.TabIndex = 3;
             this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "1 - Choose a virtual amiibo";
+            this.groupBox1.Text = "1 - 选择虚拟amiibo";
             // 
             // AboutButton
             // 
@@ -378,7 +378,7 @@
             this.AboutButton.Name = "AboutButton";
             this.AboutButton.Size = new System.Drawing.Size(362, 28);
             this.AboutButton.TabIndex = 12;
-            this.AboutButton.Text = "About emuiibo and emutool";
+            this.AboutButton.Text = "关于emuibo和emutool";
             this.AboutButton.UseVisualStyleBackColor = true;
             this.AboutButton.Click += new System.EventHandler(this.AboutButton_Click);
             // 
@@ -398,7 +398,7 @@
             this.MaximizeBox = false;
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Dummy";
+            this.Text = "占位";
             this.groupBox2.ResumeLayout(false);
             this.groupBox2.PerformLayout();
             this.groupBox3.ResumeLayout(false);

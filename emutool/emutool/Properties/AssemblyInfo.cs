@@ -7,10 +7,10 @@ using System.Runtime.InteropServices;
 // conjunto de atributos. Cambie estos valores de atributo para modificar la información
 // asociada con un ensamblado.
 [assembly: AssemblyTitle("emutool")]
-[assembly: AssemblyDescription("emuiibo's virtual amiibo creation tool")]
+[assembly: AssemblyDescription("emuiibo的虚拟amiibo创建工具")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Made by XorTroll")]
-[assembly: AssemblyProduct("emuiibo project")]
+[assembly: AssemblyCompany("XorTroll制作")]
+[assembly: AssemblyProduct("emuiibo项目")]
 [assembly: AssemblyCopyright("Copyright © emuiibo project, 2019-2020")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

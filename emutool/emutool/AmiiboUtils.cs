@@ -133,7 +133,7 @@ namespace emutool
 
         public static Amiibo BuildAmiibo(AmiiboAPI.Amiibo api_amiibo, string name)
         {
-            ExceptionUtils.Unless(api_amiibo != null, "Invalid input amiibo");
+            ExceptionUtils.Unless(api_amiibo != null, "输入的amiibo无效");
 
             var amiibo = new Amiibo
             {
@@ -152,7 +152,7 @@ namespace emutool
                 amiibo.LastWriteDate = amiibo.FirstWriteDate;
 
                 var id = api_amiibo.AmiiboId;
-                ExceptionUtils.Unless(id.Length == 16, "Invalid amiibo ID");
+                ExceptionUtils.Unless(id.Length == 16, "Amiibo ID无效");
 
                 var character_game_id_str = id.Substring(0, 4);
                 var character_variant_str = id.Substring(4, 2);
