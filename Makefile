@@ -1,7 +1,7 @@
 
 export EMUIIBO_MAJOR := 0
 export EMUIIBO_MINOR := 6
-export EMUIIBO_MICRO := 1
+export EMUIIBO_MICRO := 5
 
 .PHONY: all clean
 
@@ -10,16 +10,16 @@ all:
 	@$(MAKE) -C overlay/
 	@rm -rf $(CURDIR)/SdOut
 
-	@mkdir -p "$(CURDIR)/SdOut/atmosphere/contents/0100000000000352/flags"
-	@touch "$(CURDIR)/SdOut/atmosphere/contents/0100000000000352/flags/boot2.flag"
-	@cp "$(CURDIR)/emuiibo/target/aarch64-none-elf/release/emuiibo.nsp" "$(CURDIR)/SdOut/atmosphere/contents/0100000000000352/exefs.nsp"
-	@cp "$(CURDIR)/emuiibo/toolbox.json" "$(CURDIR)/SdOut/atmosphere/contents/0100000000000352/toolbox.json"
+	@mkdir -p "$(CURDIR)"/SdOut/atmosphere/contents/0100000000000352/flags
+	@touch "$(CURDIR)"/SdOut/atmosphere/contents/0100000000000352/flags/boot2.flag
+	@cp "$(CURDIR)"/emuiibo/target/aarch64-none-elf/release/emuiibo.nsp "$(CURDIR)"/SdOut/atmosphere/contents/0100000000000352/exefs.nsp
+	@cp "$(CURDIR)"/emuiibo/toolbox.json "$(CURDIR)"/SdOut/atmosphere/contents/0100000000000352/toolbox.json
 
-	@mkdir -p "$(CURDIR)/SdOut/sxos/titles"
-	@cp -rf "$(CURDIR)/SdOut/atmosphere/contents/*" "$(CURDIR)/SdOut/sxos/titles"
+	@mkdir -p "$(CURDIR)"/SdOut/sxos/titles
+	@cp -r "$(CURDIR)"/SdOut/atmosphere/contents/* "$(CURDIR)"/SdOut/sxos/titles
 
-	@mkdir -p $(CURDIR)/SdOut/switch/.overlays
-	@cp $(CURDIR)/overlay/emuiibo.ovl $(CURDIR)/SdOut/switch/.overlays/emuiibo.ovl
+	@mkdir -p "$(CURDIR)"/SdOut/switch/.overlays
+	@cp "$(CURDIR)"/overlay/emuiibo.ovl "$(CURDIR)"/SdOut/switch/.overlays/emuiibo.ovl
 
 clean:
 	@rm -rf $(CURDIR)/SdOut
