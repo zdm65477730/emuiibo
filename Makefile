@@ -1,7 +1,7 @@
 
 export EMUIIBO_MAJOR := 0
 export EMUIIBO_MINOR := 6
-export EMUIIBO_MICRO := 5
+export EMUIIBO_MICRO := 6
 
 .PHONY: all clean
 
