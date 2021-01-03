@@ -50,10 +50,15 @@ pub fn main() -> Result<()> {
     miiext::initialize()?;
     miiext::export_miis()?;
 
-    let mut manager = Manager::new();
-    manager.register_mitm_service_server::<ipc::nfp::UserManager>()?;
-    manager.register_service_server::<ipc::emu::EmulationService>()?;
-    manager.loop_process()?;
+    let manager = Manager::new();
+    match manager {
+       Ok(mut v) => {
+            v.register_mitm_service_server::<ipc::nfp::UserManager>()?;
+            v.register_service_server::<ipc::emu::EmulationService>()?;
+            v.loop_process()?;
+       },
+       _ => {},
+    }
 
     miiext::finalize();
     fs::finalize();
