@@ -18,14 +18,21 @@ jobs:
           sudo -n apt-get upgrade -y git build-essential
           sudo -n apt-get install -y zip python3 python3-pip python3-lz4 cargo maven
           sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.9 1
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-          rustup install nightly
-          rustup default nightly
-          rustup component add rust-src
-          cargo install --quiet xargo
-          cargo install --quiet --features=binaries linkle
-          cargo install --quiet cargo-nx --git https://github.com/aarch64-switch-rs/cargo-nx
         shell: bash
+
+      - name: Prepare Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+
+      - name: Prepare rust-src
+        run: rustup component add rust-src
+
+      - name: Prepare cargo-nx
+        run: cargo install cargo-nx --git https://github.com/aarch64-switch-rs/cargo-nx
+
       - name: Update latest libnx
         run: |
           git config --global --add safe.directory "*"
