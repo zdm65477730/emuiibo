@@ -28,10 +28,18 @@ jobs:
           override: true
 
       - name: Prepare rust-src
-        run: rustup component add rust-src
+        run: |
+          rustup toolchain install nightly
+          rustup component add rustfmt --toolchain nightly
+          rustup component add rustc-dev-x86_64-unknown-linux-gnu --toolchain nightly
+          rustup component add rls-x86_64-unknown-linux-gnu --toolchain nightly
+          rustup component add rust-analysis-x86_64-unknown-linux-gnu --toolchain nightly
+          rustup component add rust-src
 
       - name: Prepare cargo-nx
-        run: cargo install cargo-nx --git https://github.com/aarch64-switch-rs/cargo-nx
+        run: |
+          cargo install cargo-nx --git https://github.com/aarch64-switch-rs/cargo-nx
+          rustup update
 
       - name: Setup maven
         uses: actions/setup-java@v3
