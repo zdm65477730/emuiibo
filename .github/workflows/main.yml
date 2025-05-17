@@ -32,7 +32,6 @@ jobs:
           rustup toolchain install nightly
           rustup component add rustfmt --toolchain nightly
           rustup component add rustc-dev-x86_64-unknown-linux-gnu --toolchain nightly
-          rustup component add rls-x86_64-unknown-linux-gnu --toolchain nightly
           rustup component add rust-analysis-x86_64-unknown-linux-gnu --toolchain nightly
           rustup component add rust-src
 
