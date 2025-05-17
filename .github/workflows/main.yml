@@ -64,8 +64,8 @@ jobs:
       - name: Setup ENV parameters
         run: |
           VER_FILE=overlay/Makefile
-          VERSION=$(awk '/^APP_VERSION/{print $3}' $VER_FILE)
-          echo "TAG=${VERSION}" >> "${GITHUB_ENV}"
+          VERSION=$(awk '/^VER_MAJOR/{print $3}' $VER_FILE).$(awk '/^VER_MINOR/{print $3}' $VER_FILE).$(awk '/^VER_MICRO/{print $3}' $VER_FILE)
+          echo "TAG=v${VERSION}" >> "${GITHUB_ENV}"
           echo "RELEASE_NAME=emuiibo ${VERSION}" >> "${GITHUB_ENV}"
         shell: bash
       - name: Build
