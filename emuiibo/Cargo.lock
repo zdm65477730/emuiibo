@@ -202,9 +202,9 @@ dependencies = [
 
 [[package]]
 name = "lock_api"
-version = "0.4.12"
+version = "0.4.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "07af8b9cdd281b7915f413fa73f29ebd5d55d0d3f0155584dade1ff18cea1b17"
+checksum = "96936507f153605bddfcda068dd804796c84324ed2510809e5b2a624c81da765"
 dependencies = [
  "autocfg",
  "scopeguard",
@@ -244,8 +244,8 @@ dependencies = [
 
 [[package]]
 name = "nx"
-version = "0.2.0"
-source = "git+https://github.com/aarch64-switch-rs/nx#695865b3cad9e6cc89a12d17cfc7bd15d28d45de"
+version = "0.2.2"
+source = "git+https://github.com/aarch64-switch-rs/nx#f5a04ec48e9c8307c7cf56c1fa82ab0be0095e93"
 dependencies = [
  "arrayvec",
  "atomic_enum",
@@ -266,8 +266,9 @@ dependencies = [
 [[package]]
 name = "nx-derive"
 version = "0.1.0"
-source = "git+https://github.com/aarch64-switch-rs/nx#695865b3cad9e6cc89a12d17cfc7bd15d28d45de"
+source = "git+https://github.com/aarch64-switch-rs/nx#f5a04ec48e9c8307c7cf56c1fa82ab0be0095e93"
 dependencies = [
+ "proc-macro2",
  "quote",
  "syn",
 ]
