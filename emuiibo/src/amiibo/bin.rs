@@ -1075,67 +1075,69 @@ impl MiiFormat {
     }
 
     pub unsafe fn to_charinfo(&self) -> Result<mii::CharInfo> {
-        Ok(mii::CharInfo {
-            id: {
-                let mut uuid: Uuid = Default::default();
-                nx::rand::get_rng()?.fill_bytes(&mut uuid.uuid);
-                uuid
-            },
-            name: {
-                let name = self.name;
-                util::ArrayWideString::from_string(name.get_string()?)
-            },
-            font_region: mii::FontRegion::Standard,
-            faceline_color: core::mem::transmute(self.get_favorite_color()),
-            gender: core::mem::transmute(self.get_gender()),
-            height: self.height,
-            build: self.build,
-            type_val: 0,
-            region_move: !self.get_disable_sharing_flag() as u8,
-            faceline_type: core::mem::transmute(self.get_faceline_type()),
-            favorite_color: self.get_faceline_color(),
-            faceline_wrinkle: core::mem::transmute(self.get_faceline_wrinkle()),
-            faceline_make: core::mem::transmute(self.get_faceline_make()),
-            hair_type: core::mem::transmute(self.hair_type),
-            hair_color: self.get_hair_color(),
-            hair_flip: core::mem::transmute(self.get_hair_flip()),
-            eye_type: core::mem::transmute(self.get_eye_type()),
-            eye_color: self.get_eye_color(),
-            eye_scale: self.get_eye_scale(),
-            eye_aspect: self.get_eye_aspect(),
-            eye_rotate: self.get_eye_rotate(),
-            eye_x: self.get_eye_x(),
-            eye_y: self.get_eye_y(),
-            eyebrow_type: core::mem::transmute(self.get_eyebrow_type()),
-            eyebrow_color: self.get_eyebrow_color(),
-            eyebrow_scale: self.get_eyebrow_scale(),
-            eyebrow_aspect: self.get_eyebrow_aspect(),
-            eyebrow_rotate: self.get_eyebrow_rotate(),
-            eyebrow_x: self.get_eyebrow_x(),
-            eyebrow_y: self.get_eyebrow_y(),
-            nose_type: core::mem::transmute(self.get_nose_type()),
-            nose_scale: self.get_nose_scale(),
-            nose_y: self.get_nose_y(),
-            mouth_type: core::mem::transmute(self.get_mouth_type()),
-            mouth_color: self.get_mouth_color(),
-            mouth_scale: self.get_mouth_scale(),
-            mouth_aspect: self.get_mouth_aspect(),
-            mouth_y: self.get_mouth_y(),
-            beard_color: self.get_beard_color(),
-            beard_type: core::mem::transmute(self.get_beard_type()),
-            mustache_type: core::mem::transmute(self.get_mustache_type()),
-            mustache_scale: self.get_mustache_scale(),
-            mustache_y: self.get_mustache_y(),
-            glass_type: core::mem::transmute(self.get_glass_type()),
-            glass_color: self.get_glass_color(),
-            glass_scale: self.get_glass_scale(),
-            glass_y: self.get_glass_y(),
-            mole_type: core::mem::transmute(self.get_mole_type()),
-            mole_scale: self.get_mole_scale(),
-            mole_x: self.get_mole_x(),
-            mole_y: self.get_mole_y(),
-            reserved: 0
-        })
+        unsafe {
+            Ok(mii::CharInfo {
+                id: {
+                    let mut uuid: Uuid = Default::default();
+                    nx::rand::get_rng()?.fill_bytes(&mut uuid.uuid);
+                    uuid
+                },
+                name: {
+                    let name = self.name;
+                    util::ArrayWideString::from_string(name.get_string()?)
+                },
+                font_region: mii::FontRegion::Standard,
+                faceline_color: core::mem::transmute(self.get_favorite_color()),
+                gender: core::mem::transmute(self.get_gender()),
+                height: self.height,
+                build: self.build,
+                type_val: 0,
+                region_move: !self.get_disable_sharing_flag() as u8,
+                faceline_type: core::mem::transmute(self.get_faceline_type()),
+                favorite_color: self.get_faceline_color(),
+                faceline_wrinkle: core::mem::transmute(self.get_faceline_wrinkle()),
+                faceline_make: core::mem::transmute(self.get_faceline_make()),
+                hair_type: core::mem::transmute(self.hair_type),
+                hair_color: self.get_hair_color(),
+                hair_flip: core::mem::transmute(self.get_hair_flip()),
+                eye_type: core::mem::transmute(self.get_eye_type()),
+                eye_color: self.get_eye_color(),
+                eye_scale: self.get_eye_scale(),
+                eye_aspect: self.get_eye_aspect(),
+                eye_rotate: self.get_eye_rotate(),
+                eye_x: self.get_eye_x(),
+                eye_y: self.get_eye_y(),
+                eyebrow_type: core::mem::transmute(self.get_eyebrow_type()),
+                eyebrow_color: self.get_eyebrow_color(),
+                eyebrow_scale: self.get_eyebrow_scale(),
+                eyebrow_aspect: self.get_eyebrow_aspect(),
+                eyebrow_rotate: self.get_eyebrow_rotate(),
+                eyebrow_x: self.get_eyebrow_x(),
+                eyebrow_y: self.get_eyebrow_y(),
+                nose_type: core::mem::transmute(self.get_nose_type()),
+                nose_scale: self.get_nose_scale(),
+                nose_y: self.get_nose_y(),
+                mouth_type: core::mem::transmute(self.get_mouth_type()),
+                mouth_color: self.get_mouth_color(),
+                mouth_scale: self.get_mouth_scale(),
+                mouth_aspect: self.get_mouth_aspect(),
+                mouth_y: self.get_mouth_y(),
+                beard_color: self.get_beard_color(),
+                beard_type: core::mem::transmute(self.get_beard_type()),
+                mustache_type: core::mem::transmute(self.get_mustache_type()),
+                mustache_scale: self.get_mustache_scale(),
+                mustache_y: self.get_mustache_y(),
+                glass_type: core::mem::transmute(self.get_glass_type()),
+                glass_color: self.get_glass_color(),
+                glass_scale: self.get_glass_scale(),
+                glass_y: self.get_glass_y(),
+                mole_type: core::mem::transmute(self.get_mole_type()),
+                mole_scale: self.get_mole_scale(),
+                mole_x: self.get_mole_x(),
+                mole_y: self.get_mole_y(),
+                reserved: 0
+            })
+        }
     }
 }
 

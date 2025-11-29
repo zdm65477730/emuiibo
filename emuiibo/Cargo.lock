@@ -245,7 +245,7 @@ dependencies = [
 [[package]]
 name = "nx"
 version = "0.2.0"
-source = "git+https://github.com/aarch64-switch-rs/nx#695865b3cad9e6cc89a12d17cfc7bd15d28d45de"
+source = "git+https://github.com/aarch64-switch-rs/nx?rev=695865b3#695865b3cad9e6cc89a12d17cfc7bd15d28d45de"
 dependencies = [
  "arrayvec",
  "atomic_enum",
@@ -266,7 +266,7 @@ dependencies = [
 [[package]]
 name = "nx-derive"
 version = "0.1.0"
-source = "git+https://github.com/aarch64-switch-rs/nx#695865b3cad9e6cc89a12d17cfc7bd15d28d45de"
+source = "git+https://github.com/aarch64-switch-rs/nx?rev=695865b3#695865b3cad9e6cc89a12d17cfc7bd15d28d45de"
 dependencies = [
  "quote",
  "syn",

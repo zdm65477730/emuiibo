@@ -4,8 +4,10 @@ import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.io.IOUtils
 import org.apache.commons.net.ftp.FTPClient
+import org.apache.commons.net.ftp.FTPClientConfig
 import org.apache.commons.net.ftp.FTPReply
 import java.net.URL
+import java.net.URI
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
@@ -25,11 +27,13 @@ class Utils {
         }
 
         fun netDownloadString(url: String) : String {
-            return IOUtils.toString(URL(url));
+            val uri = URI(url)
+            return IOUtils.toString(uri, StandardCharsets.UTF_8);
         }
 
         fun netDownloadFile(url: String, path: String) {
-            FileUtils.copyURLToFile(URL(url), File(path), 10000, 10000);
+            val uri = URI(url)
+            FileUtils.copyURLToFile(uri.toURL(), File(path), 10000, 10000);
         }
 
         fun unaccentString(str: String) : String {

@@ -44,8 +44,7 @@ impl ApplicationArea {
     pub fn exists(&self) -> bool {
         if self.is_valid() {
             fsext::exists_file(self.area_file.clone())
-        }
-        else {
+        } else {
             false
         }
     }
@@ -53,21 +52,27 @@ impl ApplicationArea {
     pub unsafe fn create(&self, data: *const u8, data_size: usize, _recreate: bool) -> Result<()> {
         // TODO: difference between create and recreate commands?
         // write already overwrites the area file
-        self.write(data, data_size)
+        unsafe { self.write(data, data_size) }
     }
 
     /// SAFETY: `data` must be a valid, non-null pointer
     pub unsafe fn write(&self, data: *const u8, data_size: usize) -> Result<()> {
         let _ = fs::remove_file(self.area_file.as_str());
         let mut file = fs::open_file(self.area_file.as_str(), fs::FileOpenOption::Create() | fs::FileOpenOption::Write() | fs::FileOpenOption::Append())?;
-        file.write_array(core::slice::from_raw_parts(data,data_size))?;
+        unsafe {
+            let slice = core::slice::from_raw_parts(data, data_size);
+            file.write_array(slice)?;
+        }
         Ok(())
     }
 
     /// SAFETY: `data` must be a valid, non-null pointer
     pub unsafe fn read(&self, data: *mut u8, data_size: usize) -> Result<()> {
         let mut file = fs::open_file(self.area_file.as_str(), fs::FileOpenOption::Read())?;
-        file.read_array(core::slice::from_raw_parts_mut(data, data_size))?;
+        unsafe {
+            let slice = core::slice::from_raw_parts_mut(data, data_size);
+            file.read_array(slice)?;
+        }
         Ok(())
     }
 

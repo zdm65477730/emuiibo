@@ -8,10 +8,15 @@ import java.io.FileInputStream
 import java.nio.file.Path
 import java.nio.file.Paths
 import org.apache.commons.io.IOUtils
+import java.nio.charset.StandardCharsets
 
 class AmiiboAPI {
     companion object {
         val Url = "https://www.amiiboapi.com/api/amiibo/";
+
+        fun query(): Map<String, List<AmiiboAPIEntry>> {
+            return readApi() ?: mapOf()
+        }
 
         fun parseApiJson(json_data: JSONObject) : Map<String, List<AmiiboAPIEntry>>? {
             val json_entries = json_data.getJSONArray("amiibo");
@@ -24,7 +29,8 @@ class AmiiboAPI {
                     series.add(entry);
                     entry_map.put(entry.series_name, series);
                 }
-                ?: let {
+                ?:
+                let {
                     entry_map.put(entry.series_name, mutableListOf(entry));
                 }
             }
@@ -60,7 +66,7 @@ class AmiiboAPI {
                 try {
                     // Try loading local saved API
                     val json_data_strm = FileInputStream(local_api_json_path);
-                    val json_data_raw = IOUtils.toString(json_data_strm);
+                    val json_data_raw = IOUtils.toString(json_data_strm, StandardCharsets.UTF_8);
                     val json_data = JSONObject(json_data_raw);
                     return parseApiJson(json_data);
                 }
