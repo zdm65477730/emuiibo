@@ -4,6 +4,8 @@
 TARGET_TRIPLE := aarch64-nintendo-switch-freestanding
 PROGRAM_ID := 0100000000000352
 
+.PHONY: all dev clean emuiibo emuiibo-dev sysmodule sysmodule-dev overlay emuiigen dist dist-dev emuiibo-clean emuiigen-clean
+
 all: emuiibo emuiigen
 
 dev: emuiibo-dev emuiigen

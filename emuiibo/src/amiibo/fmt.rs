@@ -207,7 +207,7 @@ impl VirtualAmiibo {
         else {
             let random_mii = miiext::generate_random_mii()?;
             let mut mii_charinfo_file = fs::open_file(mii_charinfo_path.as_str(), fs::FileOpenOption::Create() | fs::FileOpenOption::Write() | fs::FileOpenOption::Append())?;
-            mii_charinfo_file.write_val(&random_mii)?;
+            mii_charinfo_file.write_val::<_, true>(&random_mii)?;
             Ok(random_mii)
         }
     }
@@ -324,23 +324,25 @@ impl VirtualAmiibo {
 
     pub fn produce_tag_info(&self) -> Result<nfp::TagInfo> {
         let mut tag_info = nfp::TagInfo {
-            uuid: [0; 0xA],
-            uuid_length: 0,
-            reserved_1: [0; 0x15],
+            uid: nfp::TagId {
+                uuid: [0; 0xA],
+                uuid_length: 0,
+                reserved_1: [0; 0x15],
+            },
             protocol: u32::MAX,
             tag_type: u32::MAX,
             reserved_2: [0; 0x30]
         };
         
         if self.info.use_random_uuid {
-            super::generate_random_uuid(&mut tag_info.uuid)?;
-            tag_info.uuid_length = tag_info.uuid.len() as u8;
+            super::generate_random_uuid(&mut tag_info.uid.uuid)?;
+            tag_info.uid.uuid_length = tag_info.uid.uuid.len() as u8;
         }
         else {
             unsafe {
-                let uuid_len = self.info.uuid.len().min(tag_info.uuid.len());
-                tag_info.uuid_length = uuid_len as u8;
-                core::ptr::copy(self.info.uuid.as_ptr(), tag_info.uuid.as_mut_ptr(), uuid_len);
+                let uuid_len = self.info.uuid.len().min(tag_info.uid.uuid.len());
+                tag_info.uid.uuid_length = uuid_len as u8;
+                core::ptr::copy(self.info.uuid.as_ptr(), tag_info.uid.uuid.as_mut_ptr(), uuid_len);
             }
         }
 
@@ -369,12 +371,28 @@ impl VirtualAmiibo {
     }
 
     pub fn produce_model_info(&self) -> Result<nfp::ModelInfo> {
+        // Dummy code until a proper function is implemented
+
+        #[derive(Copy, Clone)]
+        struct A {
+            game_character_id: u16,
+            character_variant: u8
+        }
+
+        #[derive(Copy, Clone)]
+        union CharacterId {
+            a: A,
+            character_id: [u8; 3]
+        }
+
+        let character_id = CharacterId { a: A { game_character_id: self.info.id.game_character_id, character_variant: self.info.id.character_variant } };
+
+        // TODO: adapt and do what nfc actually does
         Ok(nfp::ModelInfo {
-            game_character_id: self.info.id.game_character_id,
-            character_variant: self.info.id.character_variant,
-            series: self.info.id.series,
-            model_number: self.info.id.model_number, // Note: we should technically reverse it since nfp wants it reversed... but it only works this way?
-            figure_type: self.info.id.figure_type,
+            character_id: unsafe { character_id.character_id },
+            series_id: self.info.id.series,
+            numbering_id: self.info.id.model_number, // Note: we should technically reverse it since nfp wants it reversed... but it only works this way?
+            nfp_type: self.info.id.figure_type,
             reserved: [0; 0x39]
         })
     }
@@ -384,7 +402,7 @@ impl VirtualAmiibo {
             mii_store_data: mii::StoreData::from_charinfo(self.mii_charinfo)?,
             first_write_date: self.info.first_write_date.to_date(),
             name: util::ArrayString::from_str(&self.info.name.clone()[0..self.info.name.len().min(10)]),
-            unk: 0,
+            font_region: 0,
             reserved: [0; 0x8E]
         })
     }
@@ -396,29 +414,30 @@ impl VirtualAmiibo {
             Some(ref area_entry) => ncm::ProgramId(area_entry.program_id),
             None => DEFAULY_EMPTY_AREA_PROGRAM_ID
         };
-        let console_family = {
+        let app_area_version = {
+            // TODO: change this and do what nfc actually does
             // 0x0100 for Switch, 0x0004 for 3DS, 0x0005 for Wii U
             match program_id.0 >> 48 {
-                0x0100 => nfp::ConsoleFamily::NintendoSwitch,
-                0x0004 => nfp::ConsoleFamily::Nintendo3DS,
-                0x0005 => nfp::ConsoleFamily::NintendoWiiU,
-                _ => nfp::ConsoleFamily::Default
+                0x0100 => nfp::ApplicationAreaVersion::NintendoSwitch,
+                0x0004 => nfp::ApplicationAreaVersion::Nintendo3DS,
+                0x0005 => nfp::ApplicationAreaVersion::NintendoWiiU,
+                _ => nfp::ApplicationAreaVersion::Default
             }
         };
 
         Ok(nfp::AdminInfo {
-            program_id,
+            app_id: program_id,
             access_id: match cur_area {
                 Some(ref area_entry) => area_entry.access_id,
                 None => 0
             },
-            crc32_change_counter: 0, // TODO: just stub this?
+            terminal_id_crc32_change_counter: 0, // TODO: just stub this?
             flags: match cur_area {
                 Some(_) => nfp::AdminInfoFlags::IsInitialized() | nfp::AdminInfoFlags::HasApplicationArea(),
                 None => nfp::AdminInfoFlags::IsInitialized()
             },
-            tag_type: 0x2,
-            console_family,
+            unk: 0x2,
+            app_area_version,
             pad: [0; 0x7],
             reserved: [0; 0x28]
         })
@@ -442,7 +461,7 @@ impl VirtualAmiibo {
         let mii_charinfo_path = format!("{}/{}", self.path, self.info.mii_charinfo_file);
         let _ = fs::remove_file(mii_charinfo_path.as_str());
         let mut mii_charinfo_file = fs::open_file(mii_charinfo_path.as_str(), fs::FileOpenOption::Create() | fs::FileOpenOption::Write() | fs::FileOpenOption::Append())?;
-        mii_charinfo_file.write_val(&self.mii_charinfo)?;
+        mii_charinfo_file.write_val::<_, true>(&self.mii_charinfo)?;
 
         let areas_json_path = format!("{}/areas.json", self.path);
         write_serialize_json!(areas_json_path.as_str(), &self.areas)?;

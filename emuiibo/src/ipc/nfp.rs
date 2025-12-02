@@ -1,4 +1,5 @@
-use nx::mem::Shared;
+use nx::diag::abort;
+use nx::rc;
 use nx::result::*;
 use nx::ipc::sf;
 use nx::ipc::sf::nfp;
@@ -12,11 +13,16 @@ use crate::area;
 use crate::emu;
 
 static G_INPUT_CTX: generic_once_cell::OnceCell<sync::sys::mutex::Mutex,input::Context> = generic_once_cell::OnceCell::new();
+static G_STATE: sync::Mutex<Option<EmulationState>> = sync::Mutex::new(None);
 
 pub fn initialize() -> Result<()> {
     let supported_tags = hid::NpadStyleTag::FullKey() | hid::NpadStyleTag::Handheld() | hid::NpadStyleTag::JoyDual() | hid::NpadStyleTag::JoyLeft() | hid::NpadStyleTag::JoyRight();
 
-    let _ = G_INPUT_CTX.set(input::Context::new(supported_tags, 1)?);
+    let ctx = input::Context::new(supported_tags, 1)?;
+    if let Err(_) = G_INPUT_CTX.set(ctx) {
+        abort::abort(abort::AbortLevel::SvcBreak(), rc::ResultNotSupported::make());
+    }
+    G_STATE.set(Some(EmulationState::new()?));
 
     Ok(())
 }
@@ -27,7 +33,6 @@ pub fn get_input_context() -> &'static input::Context {
 
 pub struct EmulationHandler {
     application_id: ncm::ProgramId,
-    emulation_state: Shared<EmulationState>,
     current_opened_area: area::ApplicationArea,
     emu_handler_thread: Option<thread::JoinHandle<()>>
 }
@@ -71,7 +76,7 @@ impl EmulationHandler {
     pub fn new(application_id: ncm::ProgramId) -> Result<Self> {
         log!("\n[{:#X}] New handler!\n", application_id.0);
         
-        Ok(Self { application_id, emulation_state: Shared::new(EmulationState::new()?), emu_handler_thread: None, current_opened_area: area::ApplicationArea::new() })
+        Ok(Self { application_id, emu_handler_thread: None, current_opened_area: area::ApplicationArea::new() })
     }
 
     #[inline]
@@ -80,25 +85,23 @@ impl EmulationHandler {
     }
 
     pub fn is_state(&mut self, state: nfp::State) -> bool {
-        self.emulation_state.lock().state == state
+        G_STATE.lock().as_ref().as_ref().unwrap().state == state
     }
 
     pub fn is_device_state(&mut self, device_state: nfp::DeviceState) -> bool {
-        self.emulation_state.lock().device_state == device_state
+        G_STATE.lock().as_ref().unwrap().device_state == device_state
     }
 
-    fn emu_handler_thread_fn(handler: Shared<EmulationState>) {
+    fn emu_handler_thread_fn() {
         loop {
             {
-                let handle_handle = handler.lock();
-                if handle_handle.should_end_thread == true {
+                if G_STATE.lock().as_ref().unwrap().should_end_thread == true {
                     return;
                 }
             }
-            
-            let mut handle_handle = handler.lock();
+
             let status = emu::get_active_virtual_amiibo_status();
-            handle_handle.handle_virtual_amiibo_status(status);
+            G_STATE.lock().as_mut().unwrap().handle_virtual_amiibo_status(status);
             let _ = thread::sleep(100_000_000);
         }
 
@@ -114,16 +117,14 @@ impl EmulationHandler {
         }
 
         {
-            let mut emulation_state_handle = self.emulation_state.lock();
-            emulation_state_handle.state = nfp::State::Initialized;
-            emulation_state_handle.device_state = nfp::DeviceState::Initialized;
+            G_STATE.lock().as_mut().unwrap().state = nfp::State::Initialized;
+            G_STATE.lock().as_mut().unwrap().device_state = nfp::DeviceState::Initialized;
         }
 
         // TODO: different thread names depending on the app id?
         let thread_name = format!("emuWoker:{:X?}", self.application_id.0);
-        let handle = self.emulation_state.clone();
         self.emu_handler_thread = Some(thread::Builder::new().core(thread::ThreadStartCore::Default).priority(thread::ThreadPriority::Set(0x2B)).name(thread_name).stack_size(0x1000).spawn(move || {
-            Self::emu_handler_thread_fn(handle);
+            Self::emu_handler_thread_fn();
         })?);
         Ok(())
     }
@@ -132,9 +133,8 @@ impl EmulationHandler {
         result_return_unless!(self.is_state(nfp::State::Initialized), nfp::rc::ResultDeviceNotFound);
         log!("[{:#X}] Finalize -- (...)\n", self.application_id.0);
 
-        let mut emulation_state_handle = self.emulation_state.lock();
-        emulation_state_handle.state = nfp::State::NonInitialized;
-        emulation_state_handle.device_state = nfp::DeviceState::Finalized;
+        G_STATE.lock().as_mut().unwrap().state = nfp::State::NonInitialized;
+        G_STATE.lock().as_mut().unwrap().device_state = nfp::DeviceState::Unavailable;
         Ok(())
     }
 
@@ -169,7 +169,7 @@ impl EmulationHandler {
         result_return_unless!(self.is_device_state(nfp::DeviceState::Initialized) || self.is_device_state(nfp::DeviceState::TagRemoved), nfp::rc::ResultDeviceNotFound);
         log!("[{:#X}] StartDetection -- device_handle: (fake id: {})\n", self.application_id.0, device_handle.id);
 
-        self.emulation_state.lock().device_state = nfp::DeviceState::SearchingForTag;
+        G_STATE.lock().as_mut().unwrap().device_state = nfp::DeviceState::SearchingForTag;
         Ok(())
     }
 
@@ -177,7 +177,7 @@ impl EmulationHandler {
         result_return_unless!(self.is_state(nfp::State::Initialized), nfp::rc::ResultDeviceNotFound);
         log!("[{:#X}] StopDetection -- device_handle: (fake id: {})\n", self.application_id.0, device_handle.id);
 
-        self.emulation_state.lock().device_state = nfp::DeviceState::Initialized;
+        G_STATE.lock().as_mut().unwrap().device_state = nfp::DeviceState::Initialized;
         Ok(())
     }
 
@@ -185,7 +185,7 @@ impl EmulationHandler {
         result_return_unless!(self.is_state(nfp::State::Initialized), nfp::rc::ResultDeviceNotFound);
         log!("[{:#X}] Mount -- device_handle: (fake id: {}), model_type: {:?}, mount_target: {:?}\n", self.application_id.0, device_handle.id, model_type, mount_target);
         
-        self.emulation_state.lock().device_state = nfp::DeviceState::TagMounted;
+        G_STATE.lock().as_mut().unwrap().device_state = nfp::DeviceState::TagMounted;
         Ok(())
     }
 
@@ -193,7 +193,7 @@ impl EmulationHandler {
         result_return_unless!(self.is_state(nfp::State::Initialized), nfp::rc::ResultDeviceNotFound);
         log!("[{:#X}] Unmount -- device_handle: (fake id: {})\n", self.application_id.0, device_handle.id);
         
-        self.emulation_state.lock().device_state = nfp::DeviceState::TagFound;
+        G_STATE.lock().as_mut().unwrap().device_state = nfp::DeviceState::TagFound;
         Ok(())
     }
 
@@ -241,7 +241,7 @@ impl EmulationHandler {
         let size = core::cmp::min(area_size, data.get_size());
 
         // TODO check the pointer for nulls and return appropriate error code
-        unsafe {self.current_opened_area.write(data.get_address(), size)?;}
+        self.current_opened_area.write(data.get_address(), size)?;
         if let Some(amiibo)  = emu::get_active_virtual_amiibo().as_mut() {
             amiibo.notify_written()?;
         }
@@ -272,7 +272,7 @@ impl EmulationHandler {
                 let application_area = area::ApplicationArea::from_id(&amiibo, self.application_id.0, access_id);
                 result_return_if!(application_area.exists(), nfp::rc::ResultAreaNeedsToBeCreated);
                 // TODO check the pointer for nulls and return appropriate error code
-                unsafe { application_area.create(data.get_address(), data.get_size(), false)?; }
+                application_area.create(data.get_address(), data.get_size(), false)?;
                 amiibo.notify_written()
             },
             None => {
@@ -349,24 +349,24 @@ impl EmulationHandler {
         result_return_unless!(self.is_state(nfp::State::Initialized), nfp::rc::ResultDeviceNotFound);
         log!("[{:#X}] AttachActivateEvent -- device_handle: (fake id: {})\n", self.application_id.0, device_handle.id);
 
-        Ok(sf::Handle::from(self.emulation_state.lock().activate_event.client_handle))
+        Ok(sf::Handle::from(G_STATE.lock().as_ref().unwrap().activate_event.client_handle))
     }
 
     pub fn attach_deactivate_event(&mut self, device_handle: nfp::DeviceHandle) -> Result<sf::CopyHandle> {
         result_return_unless!(self.is_state(nfp::State::Initialized), nfp::rc::ResultDeviceNotFound);
         log!("[{:#X}] AttachDeactivateEvent -- device_handle: (fake id: {})\n", self.application_id.0, device_handle.id);
 
-        Ok(sf::Handle::from(self.emulation_state.lock().deactivate_event.client_handle))
+        Ok(sf::Handle::from(G_STATE.lock().as_ref().unwrap().deactivate_event.client_handle))
     }
 
     pub fn get_state(&mut self) -> Result<nfp::State> {
         log!("[{:#X}] GetState -- (...)\n", self.application_id.0);
-        Ok(self.emulation_state.lock().state)
+        Ok(G_STATE.lock().as_ref().unwrap().state)
     }
 
     pub fn get_device_state(&mut self, device_handle: nfp::DeviceHandle) -> Result<nfp::DeviceState> {
         log!("[{:#X}] GetDeviceState -- device_handle: (fake id: {})\n", self.application_id.0, device_handle.id);
-        Ok(self.emulation_state.lock().device_state)
+        Ok(G_STATE.lock().as_ref().unwrap().device_state)
     }
 
     pub fn get_npad_id(&mut self, device_handle: nfp::DeviceHandle) -> Result<hid::NpadIdType> {
@@ -390,7 +390,7 @@ impl EmulationHandler {
         result_return_unless!(self.is_state(nfp::State::Initialized), nfp::rc::ResultDeviceNotFound);
         log!("[{:#X}] AttachAvailabilityChangeEvent -- (...)\n", self.application_id.0);
 
-        Ok(sf::Handle::from(self.emulation_state.lock().availability_change_event.client_handle))
+        Ok(sf::Handle::from(G_STATE.lock().as_ref().unwrap().availability_change_event.client_handle))
     }
 
     pub fn recreate_application_area(&mut self, device_handle: nfp::DeviceHandle, access_id: nfp::AccessId, data: sf::InMapAliasBuffer<u8>) -> Result<()> {
@@ -402,7 +402,7 @@ impl EmulationHandler {
             Some(amiibo) => {
                 let application_area = area::ApplicationArea::from_id(&amiibo, self.application_id.0, access_id);
                 // TODO check the pointer for nulls and return appropriate error code
-                unsafe {application_area.create(data.get_address(), data.get_size(), true)?; }
+                application_area.create(data.get_address(), data.get_size(), true)?;
                 amiibo.notify_written()
             },
             None => {
@@ -458,7 +458,7 @@ impl EmulationHandler {
 
         match emu::get_active_virtual_amiibo().as_mut() {
             Some(amiibo) => {
-                amiibo.update_from_register_info_private(register_info_private.get_var())?;
+                amiibo.update_from_register_info_private(register_info_private.get_var()?)?;
             },
             None => {
                 return Err(nfp::rc::ResultDeviceNotFound::make());
@@ -520,7 +520,7 @@ impl EmulationHandler {
 impl Drop for EmulationHandler {
     fn drop(&mut self) {
         log!("[{:#X}] Dropping handler...\n", self.application_id.0);
-        self.emulation_state.lock().should_end_thread = true;
+        G_STATE.lock().as_mut().unwrap().should_end_thread = true;
         if let Some(thread_handle) = self.emu_handler_thread.take() {
             thread_handle.join().expect("We shouldn't expect any of the threads to panic. There isn't anything very interesting happening");
         }

@@ -39,7 +39,7 @@ pub fn log_str(log_str: &str) {
             .lock()
             .as_mut()
             .expect("We only allow logging after the log file has been opened")
-            .write_array(log_str.as_bytes());
+            .write_array::<_, true>(log_str.as_bytes());
     }
 }
 

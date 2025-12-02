@@ -48,7 +48,7 @@ impl compat::DeprecatedVirtualAmiiboFormat for VirtualAmiibo {
             let access_id = plain_bin.dec_data.settings.access_id_be.swap_bytes();
             let program_id = ncm::ProgramId(plain_bin.dec_data.settings.program_id_be.swap_bytes());
             let bin_area = area::ApplicationArea::from(&amiibo, access_id);
-            unsafe {bin_area.create(plain_bin.dec_data.app_area.as_ptr(), plain_bin.dec_data.app_area.len(), false)?;}
+            bin_area.create(plain_bin.dec_data.app_area.as_ptr(), plain_bin.dec_data.app_area.len(), false)?;
 
             amiibo.ensure_area_registered(access_id, program_id);
         }
@@ -65,12 +65,12 @@ impl compat::DeprecatedVirtualAmiiboFormat for VirtualAmiibo {
         {
             let conv_bin_path = format!("{}/converted-format.bin", deprecated_path);
             let mut conv_bin_file = fs::open_file(conv_bin_path.as_str(), fs::FileOpenOption::Create() | fs::FileOpenOption::Write() | fs::FileOpenOption::Append())?;
-            conv_bin_file.write_val(&conv_bin)?;
+            conv_bin_file.write_val::<_, true>(&conv_bin)?;
         }
         {
             let plain_bin_path = format!("{}/plain-format.bin", deprecated_path);
             let mut plain_bin_file = fs::open_file(plain_bin_path.as_str(), fs::FileOpenOption::Create() | fs::FileOpenOption::Write() | fs::FileOpenOption::Append())?;
-            plain_bin_file.write_val(&plain_bin)?;
+            plain_bin_file.write_val::<_, true>(&plain_bin)?;
         }
 
         Ok(amiibo)

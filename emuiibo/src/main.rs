@@ -4,17 +4,15 @@
 #[macro_use]
 extern crate nx;
 
-#[macro_use]
 extern crate alloc;
 
 extern crate emuiibo;
 
-use nx::diag;
 use nx::diag::abort;
 use nx::fs;
 use nx::ipc::server;
+use nx::rc;
 use nx::result::*;
-use nx::svc;
 use nx::thread;
 use nx::util;
 
@@ -29,22 +27,22 @@ static mut CUSTOM_HEAP: [u8; CUSTOM_HEAP_SIZE] = [0; CUSTOM_HEAP_SIZE];
 
 #[unsafe(no_mangle)]
 #[allow(static_mut_refs)]
-pub fn initialize_heap(_hbl_heap: util::PointerAndSize) -> util::PointerAndSize {
+pub fn initialize_heap(_override_heap: util::PointerAndSize) -> util::PointerAndSize {
     unsafe {
         // SAFETY: CUSTOM_HEAP must only ever be referenced from here, and nowhere else.
         util::PointerAndSize::new(&raw mut CUSTOM_HEAP as _, CUSTOM_HEAP.len())
     }
 }
 
-use nx::diag::log::lm::LmLogger;
-use nx::diag::log::LogSeverity;
-
 #[unsafe(no_mangle)]
 pub fn main() -> Result<()> {
     thread::set_current_thread_name("emuiibo.Main");
     fs::initialize_fspsrv_session()?;
     fs::mount_sd_card("sdmc")?;
-    fsext::ensure_directories()?;
+
+    if let Err(rc) = fsext::ensure_directories() {
+        log!("Error creating directories: {:?}\n", rc);
+    }
 
     if let Err(rc) = logger::initialize() {
         let _a = rc;
@@ -52,17 +50,17 @@ pub fn main() -> Result<()> {
     log!("Logging Initialized!\n");
 
     if let Err(e) = nx::rand::initialize() {
-        log!("Error initlializing rand provider: {:?}", e);
+        log!("Error initializing rand provider: {:?}\n", e);
         return Ok(());
     }
 
     if let Err(e) = miiext::initialize() {
-        log!("Error initlializing mii module provider: {:?}", e);
+        log!("Error initializing mii module provider: {:?}\n", e);
         return Ok(());
     }
 
     if let Err(e) = miiext::export_miis() {
-        log!("Error exporting mii module provider: {:?}", e);
+        log!("Error exporting mii module provider: {:?}\n", e);
         return Ok(());
     }
 
@@ -70,12 +68,14 @@ pub fn main() -> Result<()> {
     emu::load_emulation_status();
 
     if let Err(e) = ipc::nfp::initialize() {
-        log!("Error initializing nfp module provider: {:?}", e);
-        return Ok(());
+        abort::abort(abort::AbortLevel::SvcBreak(), e);
+        // log!("Error initializing nfp module provider: {:?}", e);
     }
 
     const POINTER_BUF_SIZE: usize = 0x1000;
     type Manager = server::ServerManager<POINTER_BUF_SIZE>;
+
+    log!("Servicing IPC...\n");
 
     let mut manager = Manager::new()?;
     manager.register_mitm_service_server::<ipc::nfp::user::UserManager>()?;
@@ -91,5 +91,6 @@ pub fn main() -> Result<()> {
 
 #[panic_handler]
 fn panic_handler(info: &panic::PanicInfo) -> ! {
-    util::simple_panic_handler::<nx::diag::log::lm::LmLogger>(info, abort::AbortLevel::SvcBreak())
+    log!("Panic! at emuiibo thread '{}' -> {}\n", thread::get_current_thread_name(), info);
+    abort::abort(abort::AbortLevel::SvcBreak(), rc::ResultPanicked::make())
 }

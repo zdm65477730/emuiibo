@@ -37,7 +37,7 @@ fn convert_deprecated_virtual_amiibos_in_dir(path: &str) -> Result<()> {
     let key_set_file = fs::open_file(RETAIL_KEY_SET_FILE, fs::FileOpenOption::Read());
     if let Ok(mut key_set_file) = key_set_file {
         if let Ok(key_set_v) = key_set_file.read_val::<bin::RetailKeySet>() {
-            log!("Found key_retail.bin --- old amiibo / raw dump conversions will include encrypted sections too!");
+            log!("Found key_retail.bin --- old amiibo / raw dump conversions will include encrypted sections too!\n");
             key_set = Some(key_set_v);
         }
     }
@@ -63,6 +63,7 @@ fn convert_deprecated_virtual_amiibos_in_dir(path: &str) -> Result<()> {
                     Some(v3_amiibo.convert(key_set))
                 }
                 else {
+                    log!("Not a deprecated amiibo format, skipping...\n");
                     None
                 }
             };
@@ -83,8 +84,10 @@ fn convert_deprecated_virtual_amiibos_in_dir(path: &str) -> Result<()> {
 }
 
 pub fn convert_deprecated_virtual_amiibos() {
-    log!("Analyzing deprecated dir...\n");
-    let _ = convert_deprecated_virtual_amiibos_in_dir(super::DEPRECATED_VIRTUAL_AMIIBO_DIR);
+    // log!("Analyzing deprecated dir...\n");
+    // let _ = convert_deprecated_virtual_amiibos_in_dir(super::DEPRECATED_VIRTUAL_AMIIBO_DIR);
+
     log!("Analyzing regular dir...\n");
     let _ = convert_deprecated_virtual_amiibos_in_dir(super::VIRTUAL_AMIIBO_DIR);
+    log!("Done analyzing regular dir...\n");
 }
