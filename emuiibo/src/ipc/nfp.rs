@@ -4,6 +4,7 @@ use nx::result::*;
 use nx::ipc::sf;
 use nx::ipc::sf::nfp;
 use nx::ipc::sf::ncm;
+use nx::service::nfp::DeviceHandle;
 use nx::wait;
 use nx::sync;
 use nx::service::hid;
@@ -14,6 +15,21 @@ use crate::emu;
 
 static G_INPUT_CTX: generic_once_cell::OnceCell<sync::sys::mutex::Mutex,input::Context> = generic_once_cell::OnceCell::new();
 static G_STATE: sync::Mutex<Option<EmulationState>> = sync::Mutex::new(None);
+static G_EMU_HANDLER_THREAD: sync::Mutex<Option<thread::JoinHandle<()>>> = sync::Mutex::new(None);
+
+fn emu_handler_thread_fn() {
+    loop {
+        // {
+        //     if G_STATE.lock().as_ref().unwrap().should_end_thread == true {
+        //         return;
+        //     }
+        // }
+
+        let status = emu::get_active_virtual_amiibo_status();
+        G_STATE.lock().as_mut().unwrap().handle_virtual_amiibo_status(status);
+        let _ = thread::sleep(100_000_000);
+    }
+}
 
 pub fn initialize() -> Result<()> {
     let supported_tags = hid::NpadStyleTag::FullKey() | hid::NpadStyleTag::Handheld() | hid::NpadStyleTag::JoyDual() | hid::NpadStyleTag::JoyLeft() | hid::NpadStyleTag::JoyRight();
@@ -24,6 +40,13 @@ pub fn initialize() -> Result<()> {
     }
     G_STATE.set(Some(EmulationState::new()?));
 
+    G_EMU_HANDLER_THREAD.set(Some(thread::Builder::new().core(thread::ThreadStartCore::Default).priority(thread::ThreadPriority::Set(0x2B)).name("emuiibo.EmuHandler").stack_size(0x1000).spawn(move || {
+        log!("[{}] Emu handler thread started!\n", thread::get_current_thread_name());
+        emu_handler_thread_fn();
+        log!("[{}] Emu handler thread ended!\n", thread::get_current_thread_name());
+    })?));
+
+
     Ok(())
 }
 
@@ -33,8 +56,7 @@ pub fn get_input_context() -> &'static input::Context {
 
 pub struct EmulationHandler {
     application_id: ncm::ProgramId,
-    current_opened_area: area::ApplicationArea,
-    emu_handler_thread: Option<thread::JoinHandle<()>>
+    current_opened_area: area::ApplicationArea
 }
 
 pub struct EmulationState {
@@ -42,19 +64,19 @@ pub struct EmulationState {
     deactivate_event: wait::SystemEvent,
     availability_change_event: wait::SystemEvent,
     state: nfp::State,
-    device_state: nfp::DeviceState,
-    should_end_thread: bool,
+    device_state: nfp::DeviceState
 }
 
 impl EmulationState {
     pub fn new() -> Result<Self> {
-        Ok(Self { activate_event: wait::SystemEvent::new()?, deactivate_event: wait::SystemEvent::new()?, availability_change_event: wait::SystemEvent::new()?, state: nfp::State::NonInitialized, device_state: nfp::DeviceState::Unavailable, should_end_thread: false })
+        Ok(Self { activate_event: wait::SystemEvent::new()?, deactivate_event: wait::SystemEvent::new()?, availability_change_event: wait::SystemEvent::new()?, state: nfp::State::NonInitialized, device_state: nfp::DeviceState::Unavailable })
     }
 
     fn handle_virtual_amiibo_status(&mut self, status: emu::VirtualAmiiboStatus) {
         match status {
             emu::VirtualAmiiboStatus::Connected => match self.device_state {
                 nfp::DeviceState::SearchingForTag => {
+                    log!("[EmulationState] Virtual Amiibo connected -> device_state = TagFound\n");
                     self.device_state = nfp::DeviceState::TagFound;
                     self.activate_event.signal().expect("signaling our own event should never fail");
                 },
@@ -62,7 +84,8 @@ impl EmulationState {
             },
             emu::VirtualAmiiboStatus::Disconnected => match self.device_state{
                 nfp::DeviceState::TagFound | nfp::DeviceState::TagMounted => {
-                    self.device_state =nfp::DeviceState::SearchingForTag;
+                    log!("[EmulationState] Virtual Amiibo disconnected -> device_state = SearchingForTag\n");
+                    self.device_state = nfp::DeviceState::SearchingForTag;
                     self.deactivate_event.signal().expect("signaling our own event should never fail");
                 },
                 _ => {}
@@ -76,7 +99,7 @@ impl EmulationHandler {
     pub fn new(application_id: ncm::ProgramId) -> Result<Self> {
         log!("\n[{:#X}] New handler!\n", application_id.0);
         
-        Ok(Self { application_id, emu_handler_thread: None, current_opened_area: area::ApplicationArea::new() })
+        Ok(Self { application_id, current_opened_area: area::ApplicationArea::new() })
     }
 
     #[inline]
@@ -90,21 +113,6 @@ impl EmulationHandler {
 
     pub fn is_device_state(&mut self, device_state: nfp::DeviceState) -> bool {
         G_STATE.lock().as_ref().unwrap().device_state == device_state
-    }
-
-    fn emu_handler_thread_fn() {
-        loop {
-            {
-                if G_STATE.lock().as_ref().unwrap().should_end_thread == true {
-                    return;
-                }
-            }
-
-            let status = emu::get_active_virtual_amiibo_status();
-            G_STATE.lock().as_mut().unwrap().handle_virtual_amiibo_status(status);
-            let _ = thread::sleep(100_000_000);
-        }
-
     }
 
     pub fn initialize(&mut self, aruid: sf::AppletResourceUserId, mcu_data: sf::InMapAliasBuffer<nfp::McuVersionData>) -> Result<()> {
@@ -121,11 +129,6 @@ impl EmulationHandler {
             G_STATE.lock().as_mut().unwrap().device_state = nfp::DeviceState::Initialized;
         }
 
-        // TODO: different thread names depending on the app id?
-        let thread_name = format!("emuWoker:{:X?}", self.application_id.0);
-        self.emu_handler_thread = Some(thread::Builder::new().core(thread::ThreadStartCore::Default).priority(thread::ThreadPriority::Set(0x2B)).name(thread_name).stack_size(0x1000).spawn(move || {
-            Self::emu_handler_thread_fn();
-        })?);
         Ok(())
     }
 
@@ -146,28 +149,27 @@ impl EmulationHandler {
         // Official nfp would store the npad_id somewhere else for the command below which retrieves it
         // Send a single fake device handle
 
-        let fake_device_npad_id = {
-            let p1 = get_input_context().get_player(hid::NpadIdType::No1);
-            if p1.get_style_tag_attributes(hid::NpadStyleTag::FullKey()).contains(hid::NpadAttribute::IsConnected())
-                || p1.get_style_tag_attributes(hid::NpadStyleTag::JoyDual()).contains(hid::NpadAttribute::IsConnected())
-                || p1.get_style_tag_attributes(hid::NpadStyleTag::JoyLeft()).contains(hid::NpadAttribute::IsConnected()) 
-                || p1.get_style_tag_attributes(hid::NpadStyleTag::JoyRight()).contains(hid::NpadAttribute::IsConnected()) {
-                hid::NpadIdType::No1
-            }
-            else {
-                hid::NpadIdType::Handheld
-            }
-        };
+        // let fake_device_npad_id = {
+        //     let p1 = get_input_context().get_player(hid::NpadIdType::No1);
+        //     if p1.get_style_tag_attributes(hid::NpadStyleTag::FullKey()).contains(hid::NpadAttribute::IsConnected())
+        //         || p1.get_style_tag_attributes(hid::NpadStyleTag::JoyDual()).contains(hid::NpadAttribute::IsConnected())
+        //         || p1.get_style_tag_attributes(hid::NpadStyleTag::JoyLeft()).contains(hid::NpadAttribute::IsConnected()) 
+        //         || p1.get_style_tag_attributes(hid::NpadStyleTag::JoyRight()).contains(hid::NpadAttribute::IsConnected()) {
+        //         hid::NpadIdType::No1
+        //     }
+        //     else {
+        //         hid::NpadIdType::Handheld
+        //     }
+        // };
 
-        let devices = out_devices.as_slice_mut()?;
-        devices[0].id = fake_device_npad_id as u32;
+        out_devices.as_maybeuninit_mut()?[0].write(DeviceHandle { id: 0xAABBCCDDu32, reserved: [0; 4] });
         Ok(1)
     }
 
     pub fn start_detection(&mut self, device_handle: nfp::DeviceHandle) -> Result<()> {
         result_return_unless!(self.is_state(nfp::State::Initialized), nfp::rc::ResultDeviceNotFound);
         result_return_unless!(self.is_device_state(nfp::DeviceState::Initialized) || self.is_device_state(nfp::DeviceState::TagRemoved), nfp::rc::ResultDeviceNotFound);
-        log!("[{:#X}] StartDetection -- device_handle: (fake id: {})\n", self.application_id.0, device_handle.id);
+        log!("[{:#X}] StartDetection -- device_handle: (fake id: {}) -> device_state = SearchingForTag\n", self.application_id.0, device_handle.id);
 
         G_STATE.lock().as_mut().unwrap().device_state = nfp::DeviceState::SearchingForTag;
         Ok(())
@@ -175,7 +177,7 @@ impl EmulationHandler {
 
     pub fn stop_detection(&mut self, device_handle: nfp::DeviceHandle) -> Result<()> {
         result_return_unless!(self.is_state(nfp::State::Initialized), nfp::rc::ResultDeviceNotFound);
-        log!("[{:#X}] StopDetection -- device_handle: (fake id: {})\n", self.application_id.0, device_handle.id);
+        log!("[{:#X}] StopDetection -- device_handle: (fake id: {}) -> device_state = Initialized\n", self.application_id.0, device_handle.id);
 
         G_STATE.lock().as_mut().unwrap().device_state = nfp::DeviceState::Initialized;
         Ok(())
@@ -183,7 +185,7 @@ impl EmulationHandler {
 
     pub fn mount(&mut self, device_handle: nfp::DeviceHandle, model_type: nfp::ModelType, mount_target: nfp::MountTarget) -> Result<()> {
         result_return_unless!(self.is_state(nfp::State::Initialized), nfp::rc::ResultDeviceNotFound);
-        log!("[{:#X}] Mount -- device_handle: (fake id: {}), model_type: {:?}, mount_target: {:?}\n", self.application_id.0, device_handle.id, model_type, mount_target);
+        log!("[{:#X}] Mount -- device_handle: (fake id: {}), model_type: {:?}, mount_target: {:?} - device_state = TagMounted\n", self.application_id.0, device_handle.id, model_type, mount_target);
         
         G_STATE.lock().as_mut().unwrap().device_state = nfp::DeviceState::TagMounted;
         Ok(())
@@ -191,7 +193,7 @@ impl EmulationHandler {
 
     pub fn unmount(&mut self, device_handle: nfp::DeviceHandle) -> Result<()> {
         result_return_unless!(self.is_state(nfp::State::Initialized), nfp::rc::ResultDeviceNotFound);
-        log!("[{:#X}] Unmount -- device_handle: (fake id: {})\n", self.application_id.0, device_handle.id);
+        log!("[{:#X}] Unmount -- device_handle: (fake id: {}) -> device_state = TagFound\n", self.application_id.0, device_handle.id);
         
         G_STATE.lock().as_mut().unwrap().device_state = nfp::DeviceState::TagFound;
         Ok(())
@@ -360,20 +362,23 @@ impl EmulationHandler {
     }
 
     pub fn get_state(&mut self) -> Result<nfp::State> {
-        log!("[{:#X}] GetState -- (...)\n", self.application_id.0);
-        Ok(G_STATE.lock().as_ref().unwrap().state)
+        let state = G_STATE.lock().as_ref().unwrap().state;
+        log!("[{:#X}] GetState -> state: {:?}\n", self.application_id.0, state as u32);
+        Ok(state)
     }
 
     pub fn get_device_state(&mut self, device_handle: nfp::DeviceHandle) -> Result<nfp::DeviceState> {
-        log!("[{:#X}] GetDeviceState -- device_handle: (fake id: {})\n", self.application_id.0, device_handle.id);
-        Ok(G_STATE.lock().as_ref().unwrap().device_state)
+        let device_state = G_STATE.lock().as_ref().unwrap().device_state;
+        log!("[{:#X}] GetDeviceState -- device_handle: (fake id: {}) -> device_state: {:?}\n", self.application_id.0, device_handle.id, device_state as u32);
+        Ok(device_state)
     }
 
     pub fn get_npad_id(&mut self, device_handle: nfp::DeviceHandle) -> Result<hid::NpadIdType> {
         result_return_unless!(self.is_state(nfp::State::Initialized), nfp::rc::ResultDeviceNotFound);
         log!("[{:#X}] GetNpadId -- device_handle: (fake id: {})\n", self.application_id.0, device_handle.id);
         
-        Ok(unsafe { core::mem::transmute(device_handle.id) })
+        // Ok(unsafe { core::mem::transmute(device_handle.id) })
+        Ok(hid::NpadIdType::Handheld)
     }
 
     pub fn get_application_area_size(&mut self, device_handle: nfp::DeviceHandle) -> Result<u32> {
@@ -520,10 +525,10 @@ impl EmulationHandler {
 impl Drop for EmulationHandler {
     fn drop(&mut self) {
         log!("[{:#X}] Dropping handler...\n", self.application_id.0);
-        G_STATE.lock().as_mut().unwrap().should_end_thread = true;
-        if let Some(thread_handle) = self.emu_handler_thread.take() {
-            thread_handle.join().expect("We shouldn't expect any of the threads to panic. There isn't anything very interesting happening");
-        }
+        // G_STATE.lock().as_mut().unwrap().should_end_thread = true;
+        // if let Some(thread_handle) = self.emu_handler_thread.take() {
+        //     thread_handle.join().expect("We shouldn't expect any of the threads to panic. There isn't anything very interesting happening");
+        // }
     }
 }
 

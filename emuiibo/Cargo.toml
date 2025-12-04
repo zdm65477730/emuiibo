@@ -5,7 +5,8 @@ authors = ["XorTroll"]
 edition = "2024"
 
 [dependencies]
-nx = { git = "https://github.com/aarch64-switch-rs/nx", features = ["services", "fs", "input", "rand"] }
+# nx = { git = "https://github.com/aarch64-switch-rs/nx", features = ["services", "fs", "input", "rand"] }
+nx = { path = "../../aarch64-switch-rs/nx", features = ["services", "fs", "input", "rand"] }
 
 paste = "1.0"
 static_assertions = "1.1.0"
@@ -21,7 +22,7 @@ sha2 = { version = "0.10.9", default-features = false }
 [package.metadata.nx.nsp.npdm]
 name = "emuiibo"
 signature_key_generation = 0
-main_thread_stack_size = "0x100000"
+main_thread_stack_size = "0x30000"
 main_thread_priority = 49
 main_thread_core_number = 3
 system_resource_size = 0

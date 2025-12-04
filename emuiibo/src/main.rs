@@ -22,7 +22,7 @@ use core::panic;
 
 rrt0_define_default_module_name!();
 
-const CUSTOM_HEAP_SIZE: usize = 0x8000;
+const CUSTOM_HEAP_SIZE: usize = 0x10000;
 static mut CUSTOM_HEAP: [u8; CUSTOM_HEAP_SIZE] = [0; CUSTOM_HEAP_SIZE];
 
 #[unsafe(no_mangle)]

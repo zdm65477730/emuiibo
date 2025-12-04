@@ -282,7 +282,6 @@ dependencies = [
 [[package]]
 name = "nx"
 version = "0.5.0"
-source = "git+https://github.com/aarch64-switch-rs/nx#a257c0627062fc6bc82bfd90ecb4f5828090d635"
 dependencies = [
  "arrayvec",
  "atomic_enum",
@@ -306,7 +305,6 @@ dependencies = [
 [[package]]
 name = "nx-derive"
 version = "0.1.0"
-source = "git+https://github.com/aarch64-switch-rs/nx#a257c0627062fc6bc82bfd90ecb4f5828090d635"
 dependencies = [
  "proc-macro2",
  "quote",

@@ -121,11 +121,11 @@ impl IEmulationServiceServer for EmulationServer {
 
         let amiibo = amiibo.as_ref().unwrap();
 
-        let areas = out_areas.as_slice_mut()?;
+        let areas = out_areas.as_maybeuninit_mut()?;
         
         let count = areas.len().min(amiibo.areas.areas.len());
         for i in 0..count {
-            areas[i] = amiibo.areas.areas[i];
+            areas[i].write(amiibo.areas.areas[i]);
         }
 
         Ok(count as u32)
