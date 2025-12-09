@@ -92,10 +92,12 @@ pub fn set_active_virtual_amiibo_status(status: VirtualAmiiboStatus) {
 }
 
 pub fn register_intercepted_application_id(application_id: ncm::ProgramId) {
+    log!("RegisterInterceptedApplicationId -- application_id: {:#X}\n", application_id.0);
     G_INTERCEPTED_APPLICATION_IDS.lock().push(application_id.0);
 }
 
 pub fn unregister_intercepted_application_id(application_id: ncm::ProgramId) {
+    log!("UnregisterInterceptedApplicationId -- application_id: {:#X}\n", application_id.0);
     G_INTERCEPTED_APPLICATION_IDS
         .lock()
         .retain(|&id| id != application_id.0);

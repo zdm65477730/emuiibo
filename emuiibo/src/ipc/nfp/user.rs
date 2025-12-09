@@ -20,7 +20,6 @@ pub struct UserEmulator {
 impl UserEmulator {
     pub fn new(application_id: ncm::ProgramId) -> Result<Self> {
         emu::register_intercepted_application_id(application_id);
-        
         Ok(Self {
             handler: EmulationHandler::new(application_id)?
         })
@@ -147,7 +146,6 @@ pub struct UserManager {
 
 impl IUserManagerServer for UserManager {
     fn create_user_interface(&mut self) -> Result<impl IUserServer + 'static> {
-        emu::register_intercepted_application_id(self.info.program_id);
         UserEmulator::new(self.info.program_id)
     }
 }

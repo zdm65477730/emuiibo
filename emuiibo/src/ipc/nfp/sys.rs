@@ -18,9 +18,16 @@ pub struct SystemEmulator {
 
 impl SystemEmulator {
     pub fn new(application_id: ncm::ProgramId) -> Result<Self> {
+        emu::register_intercepted_application_id(application_id);
         Ok(Self {
             handler: EmulationHandler::new(application_id)?
         })
+    }
+}
+
+impl Drop for SystemEmulator {
+    fn drop(&mut self) {
+        emu::unregister_intercepted_application_id(self.handler.get_application_id());
     }
 }
 
