@@ -35,6 +35,7 @@ dist: sysmodule overlay
 	@cp $(CURDIR)/overlay/emuiibo.ovl $(CURDIR)/SdOut/switch/.overlays/emuiibo.ovl
 	@mkdir -p $(CURDIR)/SdOut/emuiibo/overlay
 	@cp -r $(CURDIR)/overlay/lang $(CURDIR)/SdOut/emuiibo/overlay/
+	@echo "Output created at $(CURDIR)/SdOut"
 
 dist-dev: sysmodule-dev overlay
 	@rm -rf $(CURDIR)/SdOut
@@ -46,6 +47,7 @@ dist-dev: sysmodule-dev overlay
 	@cp $(CURDIR)/overlay/emuiibo.ovl $(CURDIR)/SdOut/switch/.overlays/emuiibo.ovl
 	@mkdir -p $(CURDIR)/SdOut/emuiibo/overlay
 	@cp -r $(CURDIR)/overlay/lang $(CURDIR)/SdOut/emuiibo/overlay/
+	@echo "Output (dev) created at $(CURDIR)/SdOut"
 
 emuiigen:
 	@cd emuiigen && mvn package
