@@ -1,5 +1,6 @@
 use crate::area;
 use crate::fsext;
+use crate::rc;
 
 use super::{bin, compat, fmt};
 use alloc::string::ToString;
@@ -19,8 +20,15 @@ pub struct VirtualAmiibo {
 
 impl super::VirtualAmiiboFormat for VirtualAmiibo {
     fn try_load(path: String) -> Result<Self> {
+        // Avoid loading any file as valid
+        result_return_unless!(path.ends_with(".bin"), rc::ResultInvalidDeprecatedVirtualAmiibo);
+
         let mut file = fs::open_file(path.as_str(), fs::FileOpenOption::Read())?;
         let raw_bin: bin::RawFormat = file.read_val()?;
+
+        // Verification
+        result_return_unless!(raw_bin.st_2.unk_0xa5 == 0xA5, rc::ResultInvalidDeprecatedVirtualAmiibo);
+
         Ok(Self { raw_bin_path: path, raw_bin })
     }
 }

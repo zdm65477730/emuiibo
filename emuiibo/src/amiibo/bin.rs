@@ -1379,7 +1379,6 @@ impl PlainFormat {
                 mii_charinfo_file,
                 name: {
                     let name_be = self.dec_data.settings.name_be;
-                    log!("Maybe here {:?}\n", name_be.as_buffer());
                     let name_str = name_be.get_string()?;
                     if name_str.is_empty() {
                         fsext::get_path_file_name(&path)

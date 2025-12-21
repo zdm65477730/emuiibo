@@ -8,5 +8,6 @@ result_define_group!(RESULT_MODULE => {
     InvalidLoadedVirtualAmiibo: 5,
     VirtualAmiiboAreasJsonNotFound: 6,
     InvalidActiveVirtualAmiibo: 7,
-    InvalidVirtualAmiiboAccessId: 8
+    InvalidVirtualAmiiboAccessId: 8,
+    InvalidDeprecatedVirtualAmiibo: 9
 });
