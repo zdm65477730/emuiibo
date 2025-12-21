@@ -1,6 +1,4 @@
 
-#.PHONY: all dev emuiibo emuiibo-dev sysmodule sysmodule-dev overlay emuiigen dist clean emuiibo-clean emuiigen-clean
-
 TARGET_TRIPLE := aarch64-nintendo-switch-freestanding
 PROGRAM_ID := 0100000000000352
 
@@ -35,6 +33,7 @@ dist: sysmodule overlay
 	@cp $(CURDIR)/overlay/emuiibo.ovl $(CURDIR)/SdOut/switch/.overlays/emuiibo.ovl
 	@mkdir -p $(CURDIR)/SdOut/emuiibo/overlay
 	@cp -r $(CURDIR)/overlay/lang $(CURDIR)/SdOut/emuiibo/overlay/
+	@zip -r $(CURDIR)/emuiibo.zip SdOut 
 	@echo "Output created at $(CURDIR)/SdOut"
 
 dist-dev: sysmodule-dev overlay

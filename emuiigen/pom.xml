@@ -8,7 +8,7 @@
     <groupId>com.xortroll.emuiibo.emuiigen</groupId>
     <artifactId>emuiigen</artifactId>
 
-    <version>1.1.1</version>
+    <version>1.1.2</version>
     <name>emuiigen</name>
 
     <properties>
@@ -18,9 +18,8 @@
         <main.name>emuiigen</main.name>
         
         <kotlin.code.style>official</kotlin.code.style>
-        <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
+        <kotlin.version>1.9.0</kotlin.version>
         <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
-        <kotlin.version>1.7.10</kotlin.version>
     </properties>
 
     <dependencies>

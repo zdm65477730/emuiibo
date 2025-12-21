@@ -95,6 +95,8 @@ While old emuiibo formats are supported and converted to the current format (see
 
 ![Screenshot](screenshots/emuiigen.png)
 
+> Note: emuiigen is made to work on Java 11+!
+
 Now you can copy the generated amiibo folder onto your SD card, in `sd:/emuiibo/amiibo` or in any subdirectories inside it!
 
 ### Supported figures

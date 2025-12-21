@@ -1,12 +1,11 @@
 [package]
 name = "emuiibo"
-version = "1.1.1"
+version = "1.1.2"
 authors = ["XorTroll"]
 edition = "2024"
 
 [dependencies]
-# nx = { git = "https://github.com/aarch64-switch-rs/nx", features = ["services", "fs", "input", "rand"] }
-nx = { path = "../../aarch64-switch-rs/nx", features = ["services", "fs", "input", "rand"] }
+nx = { git = "https://github.com/aarch64-switch-rs/nx", features = ["services", "fs", "input", "rand"] }
 
 paste = "1.0"
 static_assertions = "1.1.0"
