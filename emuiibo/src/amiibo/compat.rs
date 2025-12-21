@@ -84,8 +84,9 @@ fn convert_deprecated_virtual_amiibos_in_dir(path: &str) -> Result<()> {
 }
 
 pub fn convert_deprecated_virtual_amiibos() {
-    // log!("Analyzing deprecated dir...\n");
-    // let _ = convert_deprecated_virtual_amiibos_in_dir(super::DEPRECATED_VIRTUAL_AMIIBO_DIR);
+    log!("Analyzing deprecated dir...\n");
+    let _ = convert_deprecated_virtual_amiibos_in_dir(super::DEPRECATED_VIRTUAL_AMIIBO_DIR);
+    log!("Done analyzing deprecated dir...\n");
 
     log!("Analyzing regular dir...\n");
     let _ = convert_deprecated_virtual_amiibos_in_dir(super::VIRTUAL_AMIIBO_DIR);
