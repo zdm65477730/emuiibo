@@ -48,7 +48,6 @@ impl IEmulationServiceServer for EmulationServer {
     }
 
     fn get_emulation_status(&mut self) -> Result<emu::EmulationStatus> {
-        log!("GetEmulationStatus -- (...)\n");
         let status = emu::get_emulation_status();
         Ok(status)
     }
@@ -88,7 +87,6 @@ impl IEmulationServiceServer for EmulationServer {
     }
 
     fn get_active_virtual_amiibo_status(&mut self) -> Result<emu::VirtualAmiiboStatus> {
-        log!("GetActiveVirtualAmiiboStatus -- (...)\n");
         let status = emu::get_active_virtual_amiibo_status();
         Ok(status)
     }
@@ -100,7 +98,6 @@ impl IEmulationServiceServer for EmulationServer {
     }
 
     fn is_application_id_intercepted(&mut self, application_id: ncm::ProgramId) -> Result<bool> {
-        log!("IsApplicationIdIntercepted -- app_id: {:#X}\n", application_id.0);
         Ok(emu::is_application_id_intercepted(application_id))
     }
 
@@ -121,11 +118,11 @@ impl IEmulationServiceServer for EmulationServer {
 
         let amiibo = amiibo.as_ref().unwrap();
 
-        let areas = out_areas.as_slice_mut()?;
+        let areas = out_areas.as_maybeuninit_mut()?;
         
         let count = areas.len().min(amiibo.areas.areas.len());
         for i in 0..count {
-            areas[i] = amiibo.areas.areas[i];
+            areas[i].write(amiibo.areas.areas[i]);
         }
 
         Ok(count as u32)

@@ -58,7 +58,9 @@ pub fn get_path_file_name_without_extension(path: String) -> String {
 pub fn recreate_directory(path: impl AsRef<str>) -> Result<()> {
     let path = path.as_ref();
     // The directory might not already exist, thus this attempt to delete it could fail
-    let _ = fs::remove_dir_all(path);
+    if let Err(rc) = fs::remove_dir_all(path) {
+        log!("Error removing directory {}: {:?}\n", path, rc);
+    }
     fs::create_directory(path)?;
     Ok(())
 }
@@ -83,7 +85,7 @@ macro_rules! write_serialize_json {
         if let Ok(json_data) = serde_json::to_vec_pretty($t) {
             let _ = nx::fs::remove_file($path);
             let mut file = nx::fs::open_file($path, nx::fs::FileOpenOption::Create() | nx::fs::FileOpenOption::Write() | nx::fs::FileOpenOption::Append())?;
-            file.write_array(&json_data)?;
+            file.write_array::<_, true>(&json_data)?;
             Ok(())
         }
         else {

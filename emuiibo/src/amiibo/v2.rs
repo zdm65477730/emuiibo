@@ -62,7 +62,7 @@ impl super::VirtualAmiiboFormat for VirtualAmiibo {
             true => {
                 let mii_charinfo = miiext::generate_random_mii()?;
                 let mut file = fs::open_file(mii_charinfo_path.as_str(), fs::FileOpenOption::Create() | fs::FileOpenOption::Write() | fs::FileOpenOption::Append())?;
-                file.write_val(&mii_charinfo)?;
+                file.write_val::<_, true>(&mii_charinfo)?;
                 mii_charinfo
             },
             false => {
@@ -122,7 +122,7 @@ impl compat::DeprecatedVirtualAmiiboFormat for VirtualAmiibo {
             if existing_access_id.is_none() || (existing_id != access_id) {
                 let bin_area = area::ApplicationArea::from(&amiibo, access_id);
                 // TSAFETY: This is fine as we're writing from a valid memory range
-                unsafe {bin_area.create(plain_bin.dec_data.app_area.as_ptr(), plain_bin.dec_data.app_area.len(), false)?;}
+                bin_area.create(plain_bin.dec_data.app_area.as_ptr(), plain_bin.dec_data.app_area.len(), false)?;
 
                 amiibo.ensure_area_registered(access_id, program_id);
             }
@@ -141,12 +141,12 @@ impl compat::DeprecatedVirtualAmiiboFormat for VirtualAmiibo {
         {
             let conv_bin_path = format!("{}/amiibo-converted.bin", deprecated_path);
             let mut conv_bin_file = fs::open_file(conv_bin_path.as_str(), fs::FileOpenOption::Create() | fs::FileOpenOption::Write() | fs::FileOpenOption::Append())?;
-            conv_bin_file.write_val(&conv_bin)?;
+            conv_bin_file.write_val::<_, true>(&conv_bin)?;
         }
         {
             let plain_bin_path = format!("{}/amiibo-plain.bin", deprecated_path);
             let mut plain_bin_file = fs::open_file(plain_bin_path.as_str(), fs::FileOpenOption::Create() | fs::FileOpenOption::Write() | fs::FileOpenOption::Append())?;
-            plain_bin_file.write_val(&plain_bin)?;
+            plain_bin_file.write_val::<_, true>(&plain_bin)?;
         }
 
         let old_mii_charinfo_path = format!("{}/mii.dat", self.path);
