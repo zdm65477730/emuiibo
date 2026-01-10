@@ -37,6 +37,15 @@ namespace {
 
 namespace {
 
+    enum class InitializationStatus {
+        Ok,
+        TranslationsNotLoaded,
+        EmuiiboNotPresent,
+        OkVersionMismatch,
+        EmuiiboServiceError,
+        OtherServiceError
+    };
+
     enum class Icon {
         Help,
         Reset,
@@ -74,7 +83,13 @@ namespace {
 
     constexpr auto FavoritesFile = "sdmc:/emuiibo/overlay/favorites.txt";
 
-    bool g_InitializationOk;
+    InitializationStatus g_InitializationStatus;
+    Result g_InitializationResult;
+
+    inline bool IsInitializationOk() {
+        return (g_InitializationStatus == InitializationStatus::Ok) || (g_InitializationStatus == InitializationStatus::OkVersionMismatch);
+    }
+
     std::string g_VirtualAmiiboDirectory;
     emu::Version g_Version;
     std::string g_ActiveVirtualAmiiboPath;
@@ -95,12 +110,37 @@ namespace {
     }
 
     inline std::string MakeVersionString() {
-        if(!g_InitializationOk) {
-            return "EmuiiboNotPresent"_tr;
+        if(!IsInitializationOk()) {
+            if(g_InitializationStatus == InitializationStatus::TranslationsNotLoaded) {
+                return "Unable to load translations!";
+            }
+            else if(g_InitializationStatus == InitializationStatus::EmuiiboNotPresent) {
+                return "EmuiiboNotPresent"_tr;
+            }
+            else if(g_InitializationStatus == InitializationStatus::EmuiiboServiceError) {
+                std::stringstream strm;
+                strm << "EmuiiboServiceError"_tr;
+                strm << " (0x" << std::hex << std::uppercase << g_InitializationResult << ")";
+                return strm.str();
+            }
+            else if(g_InitializationStatus == InitializationStatus::OtherServiceError) {
+                std::stringstream strm;
+                strm << "OtherServiceError"_tr;
+                strm << " (0x" << std::hex << std::uppercase << g_InitializationResult << ")";
+                return strm.str();
+            }
         }
         else {
-            return std::to_string(g_Version.major) + "." + std::to_string(g_Version.minor) + "." + std::to_string(g_Version.micro) + " (" + (g_Version.dev_build ? "dev" : "release") + ")"; 
+            std::stringstream strm;
+            strm << "emuiibo v" << (int)g_Version.major << "." << (int)g_Version.minor << "." << (int)g_Version.micro;
+            strm << " (" << (g_Version.dev_build ? "dev" : "release") << ")";
+            if(g_InitializationStatus == InitializationStatus::OkVersionMismatch) {
+                strm << "(outdated, expected v" << (int)ExpectedVersion.major << "." << (int)ExpectedVersion.minor << "." << (int)ExpectedVersion.micro << ")";
+            }
+            return strm.str();
         }
+
+        return std::string("Unknown statius (...)");
     }
 
     inline emu::VirtualAmiiboStatus GetActiveVirtualAmiiboStatus() {
@@ -488,7 +528,7 @@ class AmiiboGui : public tsl::Gui {
             this->bottom_list = new CustomList();
             this->root_frame->setBottomSection(this->bottom_list);
 
-            if(!g_InitializationOk) {
+            if(!IsInitializationOk()) {
                 return this->root_frame;
             }
 
@@ -657,7 +697,7 @@ class AmiiboGui : public tsl::Gui {
         }
 
         virtual void update() override {
-            if(!g_InitializationOk) {
+            if(!IsInitializationOk()) {
                 return;
             }
 
@@ -779,18 +819,40 @@ class AmiiboGui : public tsl::Gui {
 class EmuiiboOverlay : public tsl::Overlay {
     public:
         virtual void initServices() override {
-            g_InitializationOk = tr::Load() && emu::IsAvailable() && R_SUCCEEDED(emu::Initialize()) && R_SUCCEEDED(pmdmntInitialize()) && R_SUCCEEDED(nsInitialize());
-            if(g_InitializationOk) {
-                g_Version = emu::GetVersion();
-                // TODO: distinguish between different possible issues?
-                g_InitializationOk &= g_Version.EqualsExceptBuild(ExpectedVersion);
+            if(!tr::Load()) {
+                g_InitializationStatus = InitializationStatus::TranslationsNotLoaded;
+                return;
+            }
+            if(!emu::IsAvailable()) {
+                g_InitializationStatus = InitializationStatus::EmuiiboNotPresent;
+                return;
+            }
+            g_InitializationResult = emu::Initialize();
+            if(R_FAILED(g_InitializationResult)) {
+                g_InitializationStatus = InitializationStatus::EmuiiboServiceError;
+                return;
+            }
+            g_InitializationResult = pmdmntInitialize();
+            if(R_FAILED(g_InitializationResult)) {
+                g_InitializationStatus = InitializationStatus::OtherServiceError;
+                return;
+            }
+            g_InitializationResult = nsInitialize();
+            if(R_FAILED(g_InitializationResult)) {
+                g_InitializationStatus = InitializationStatus::OtherServiceError;
+                return;
             }
 
-            if(g_InitializationOk) {
-                char virtual_amiibo_dir_str[FS_MAX_PATH] = {};
-                emu::GetVirtualAmiiboDirectory(virtual_amiibo_dir_str, sizeof(virtual_amiibo_dir_str));
-                g_VirtualAmiiboDirectory.assign(virtual_amiibo_dir_str);
+            g_Version = emu::GetVersion();
+            if(!g_Version.EqualsExceptBuild(ExpectedVersion)) {
+                g_InitializationStatus = InitializationStatus::OkVersionMismatch;;
+                return;
             }
+
+            g_InitializationStatus = InitializationStatus::Ok;
+            char virtual_amiibo_dir_str[FS_MAX_PATH] = {};
+            emu::GetVirtualAmiiboDirectory(virtual_amiibo_dir_str, sizeof(virtual_amiibo_dir_str));
+            g_VirtualAmiiboDirectory.assign(virtual_amiibo_dir_str);
         }
 
         virtual void exitServices() override {
