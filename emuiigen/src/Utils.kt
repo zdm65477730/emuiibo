@@ -25,7 +25,14 @@ class Utils {
         }
 
         fun netDownloadString(url: String) : String {
-            return IOUtils.toString(URL(url));
+            val connection = URL(url).openConnection().apply {
+                connectTimeout = 10000 // connectTimeoutMs
+                readTimeout = 10000 // readTimeoutMs
+            }
+
+            connection.getInputStream().use { input ->
+                return IOUtils.toString(input, Charsets.UTF_8)
+            }
         }
 
         fun netDownloadFile(url: String, path: String) {

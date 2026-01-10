@@ -14,11 +14,10 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/20.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.xortroll.emuiibo.emuiigen.ui.MainController">
+<VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="696.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.xortroll.emuiibo.emuiigen.ui.MainController">
    <children>
-      <AnchorPane prefHeight="200.0" prefWidth="200.0">
+      <AnchorPane prefHeight="697.0" prefWidth="800.0">
          <children>
-      <Label fx:id="StatusLabel" layoutX="14.0" layoutY="572.0" text="Label" />
             <TabPane prefHeight="570.0" prefWidth="800.0" tabClosingPolicy="UNAVAILABLE">
               <tabs>
                 <Tab text="General">
@@ -174,6 +173,17 @@
                   </Tab>
               </tabs>
             </TabPane>
+            <TitledPane animated="false" layoutX="14.0" layoutY="570.0" prefHeight="76.0" prefWidth="771.0" text="AmiiboAPI access">
+               <content>
+                  <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="46.0" prefWidth="769.0">
+                     <children>
+                        <Button fx:id="ApiReloadButton" layoutX="649.0" layoutY="12.0" mnemonicParsing="false" prefHeight="26.0" prefWidth="106.0" text="Retry" />
+                        <TextField fx:id="ApiUrlText" layoutX="14.0" layoutY="12.0" prefHeight="26.0" prefWidth="607.0" promptText="AmiiboAPI URL" />
+                     </children>
+                  </AnchorPane>
+               </content>
+            </TitledPane>
+      <Label fx:id="StatusLabel" layoutX="21.0" layoutY="662.0" text="Label" />
          </children>
       </AnchorPane>
    </children>

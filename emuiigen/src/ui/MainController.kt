@@ -58,6 +58,9 @@ class MainController {
     @FXML lateinit var GenerateOneAmiiboSeriesBox: ComboBox<String>;
     @FXML lateinit var AmiiboBox: ComboBox<String>;
     @FXML lateinit var AmiiboImage: ImageView;
+
+    @FXML lateinit var ApiUrlText: TextField;
+    @FXML lateinit var ApiReloadButton: Button;
     @FXML lateinit var StatusLabel: Label;
 
     @FXML lateinit var AmiiboNameText: TextField;
@@ -295,13 +298,17 @@ class MainController {
         }
     }
 
-    fun prepare(stage: Stage) {
-        this.MainStage = stage;
-        this.OpenedAmiibo = null;
-
+    private fun tryReadApi(url: String) {
         val task = object : Task<Unit>() {
             override fun call() {
-                val api_amiibos = AmiiboAPI.readApi();
+                this.updateMessage("Accessing AmiiboAPI...");
+
+                this@MainController.ApiUrlText.setDisable(true);
+                this@MainController.ApiReloadButton.setDisable(true);
+                val api_amiibos = AmiiboAPI.readApi(url);
+                this@MainController.ApiUrlText.setDisable(false);
+                this@MainController.ApiReloadButton.setDisable(false);
+
                 api_amiibos?.let {
                     this.updateMessage("AmiiboAPI was successfully accessed!");
                     
@@ -321,7 +328,19 @@ class MainController {
                 }
             }
         };
+
         this.StatusLabel.textProperty().bind(task.messageProperty());
+
+        val task_thr = Thread(task);
+        task_thr.setDaemon(true);
+        task_thr.start();
+    }
+
+    fun prepare(stage: Stage) {
+        this.MainStage = stage;
+        this.OpenedAmiibo = null;
+
+        this.tryReadApi(AmiiboAPI.DefaultUrl);
 
         this.AmiiboOpenButton.setOnAction(object : EventHandler<ActionEvent> {
             override fun handle(event: ActionEvent) {
@@ -412,6 +431,14 @@ class MainController {
                 MainApplication.HostServices.showDocument("https://github.com/XorTroll/emuiibo");
             }
         });
+
+        this.ApiReloadButton.setOnAction(object : EventHandler<ActionEvent> {
+            override fun handle(event: ActionEvent) {
+                this@MainController.tryReadApi(this@MainController.ApiUrlText.getText());
+            }
+        });
+        
+        this.ApiUrlText.setText(AmiiboAPI.DefaultUrl);
 
         this.GenerateOneAmiiboSeriesBox.selectionModel.selectedItemProperty().addListener(object : ChangeListener<String?> {
             override fun changed(a: ObservableValue<out String?>, old: String?, new: String?) {
@@ -585,9 +612,5 @@ class MainController {
                 }
             }
         });
-
-        val task_thr = Thread(task);
-        task_thr.setDaemon(true);
-        task_thr.start();
     }
 }
