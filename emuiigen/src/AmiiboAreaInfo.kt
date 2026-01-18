@@ -2,6 +2,10 @@ package com.xortroll.emuiibo.emuiigen
 
 import org.json.JSONObject
 import org.json.JSONArray
+import java.io.FileInputStream
+import org.apache.commons.io.IOUtils
+import java.nio.charset.StandardCharsets
+import java.io.File
 
 data class AmiiboAreaInfo(val current_area_access_id: UInt, val areas: List<AmiiboAreaEntry>) {
     companion object {
@@ -16,6 +20,13 @@ data class AmiiboAreaInfo(val current_area_access_id: UInt, val areas: List<Amii
             }
 
             return AmiiboAreaInfo(current_area_access_id, areas);
+        }
+
+        fun fromJsonFile(path: String) : AmiiboAreaInfo {
+            val json_strm = FileInputStream(path);
+            val json_raw = IOUtils.toString(json_strm, StandardCharsets.UTF_8);
+            val json = JSONObject(json_raw);
+            return fromJson(json);
         }
     }
 

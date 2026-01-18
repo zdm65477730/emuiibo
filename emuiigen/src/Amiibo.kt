@@ -8,7 +8,9 @@ import kotlin.random.Random
 import org.json.JSONObject
 import org.json.JSONArray
 import org.apache.commons.io.IOUtils
+import java.nio.charset.StandardCharsets
 
+@OptIn(ExperimentalUnsignedTypes::class)
 data class Amiibo(var first_write_date: AmiiboDate, var id: AmiiboId, var last_write_date: AmiiboDate, var mii_charinfo_file: String, var name: String, var uuid: UByteArray, var use_random_uuid: Boolean, var version: UInt, var write_counter: UShort, var areas: AmiiboAreaInfo?) {
     companion object {
         val UuidLength = 10;
@@ -35,7 +37,7 @@ data class Amiibo(var first_write_date: AmiiboDate, var id: AmiiboId, var last_w
     
             try {
                 val areas_json_strm = FileInputStream(areas_json_path);
-                val areas_json_raw = IOUtils.toString(areas_json_strm);
+                val areas_json_raw = IOUtils.toString(areas_json_strm, StandardCharsets.UTF_8);
                 val areas_json = JSONObject(areas_json_raw);
     
                 areas = AmiiboAreaInfo.fromJson(areas_json);
@@ -46,7 +48,7 @@ data class Amiibo(var first_write_date: AmiiboDate, var id: AmiiboId, var last_w
 
             try {
                 val json_strm = FileInputStream(json_path);
-                val json_raw = IOUtils.toString(json_strm);
+                val json_raw = IOUtils.toString(json_strm, StandardCharsets.UTF_8);
                 val json = JSONObject(json_raw);
     
                 val first_write_date = AmiiboDate.fromJson(json.getJSONObject("first_write_date"));
@@ -90,7 +92,7 @@ data class Amiibo(var first_write_date: AmiiboDate, var id: AmiiboId, var last_w
         }
     }
 
-    inline fun hasAreas() : Boolean {
+    fun hasAreas() : Boolean {
         return this.areas != null;
     }
 
