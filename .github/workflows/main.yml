@@ -20,33 +20,26 @@ jobs:
       - name: Update latest libnx
         run: |
           git config --global --add safe.directory "*"
-          git clone --recurse-submodules https://github.com/zdm65477730/libnx.git
+          git clone --recurse-submodules https://github.com/switchbrew/libnx.git
           cd libnx
           make install -j$(nproc)
         shell: bash
 
-      - name: Cargo cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            emuiibo/target
-          key: emuiibo-${{ runner.os }}-${{ hashFiles('emuiibo/Cargo.lock') }}
-          restore-keys: |
-            emuiibo-${{ runner.os }}-
       - name: Prepare Rust
-        uses: moonrepo/setup-rust@v1
+        uses: actions-rs/toolchain@v1
         with:
-          components: rust-src
           profile: minimal
-          cache: false
+          toolchain: nightly
+          override: true
+
+      - name: Prepare rust-src
+        run: rustup component add rust-src
 
       - name: Prepare cargo-nx
-        run: cargo install cargo-nx --git https://github.com/aarch64-switch-rs/cargo-nx --rev 0dfe4a3c
+        run: cargo install cargo-nx --git https://github.com/aarch64-switch-rs/cargo-nx
 
       - name: Setup maven
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -85,4 +78,4 @@ jobs:
           make_latest: true
           files: |
             ./SdOut/emuiibo.zip
-            ./emuiigen/target/emuiigen.jar
+            ./emuiigen/target/emuiigen-jar-with-dependencies.jar
