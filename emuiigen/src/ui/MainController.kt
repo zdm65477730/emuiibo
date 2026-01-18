@@ -20,6 +20,7 @@ import javafx.event.EventHandler
 import javafx.event.ActionEvent
 import javafx.stage.Stage
 import javafx.stage.DirectoryChooser
+import javafx.stage.FileChooser
 import javafx.application.Platform
 import javafx.beans.value.ObservableValue
 import javafx.beans.value.ChangeListener
@@ -39,11 +40,13 @@ import com.xortroll.emuiibo.emuiigen.Utils
 import com.xortroll.emuiibo.emuiigen.AmiiboDate
 import com.xortroll.emuiibo.emuiigen.ui.MainApplication
 import com.xortroll.emuiibo.emuiigen.AmiiboAreaInfo
+import kotlin.ExperimentalUnsignedTypes
 
+@OptIn(ExperimentalUnsignedTypes::class)
 class MainController {
     companion object {
 
-        val TemporaryFtpDirectory = "tmp_ftp";
+        val TemporaryFtpDirectory = MainApplication.ResourceBundle.getString("ftp.tempDir");
 
     }
 
@@ -58,9 +61,6 @@ class MainController {
     @FXML lateinit var GenerateOneAmiiboSeriesBox: ComboBox<String>;
     @FXML lateinit var AmiiboBox: ComboBox<String>;
     @FXML lateinit var AmiiboImage: ImageView;
-
-    @FXML lateinit var ApiUrlText: TextField;
-    @FXML lateinit var ApiReloadButton: Button;
     @FXML lateinit var StatusLabel: Label;
 
     @FXML lateinit var AmiiboNameText: TextField;
@@ -111,15 +111,15 @@ class MainController {
         }
     }
 
-    inline fun getSelectedAmiiboSeriesName() : String? {
+    fun getSelectedAmiiboSeriesName() : String? {
         return this.GenerateOneAmiiboSeriesBox.selectionModel.selectedItem;
     }
 
-    inline fun getSelectedAmiiboIndex() : Int {
+    fun getSelectedAmiiboIndex() : Int {
         return this.AmiiboBox.selectionModel.selectedIndex;
     }
-    
-    inline fun getSelectedAmiibo() : AmiiboAPIEntry? {
+
+    fun getSelectedAmiibo() : AmiiboAPIEntry? {
         val series_name = this.getSelectedAmiiboSeriesName();
         if(series_name != null) {
             return this.Amiibos.get(series_name)?.get(this.getSelectedAmiiboIndex());
@@ -145,7 +145,7 @@ class MainController {
                 }
             }
             ?: let {
-                this@MainController.showError("Internal unexpected error...");
+                this@MainController.showError(MainApplication.ResourceBundle.getString("error.internalUnexpectedError"));
             }
         }
         else {
@@ -159,18 +159,27 @@ class MainController {
         return res.isPresent() && (res.get() == ButtonType.YES);
     }
     
-    fun showError(msg: String) {
-        val alert = Alert(Alert.AlertType.ERROR, msg, ButtonType.OK);
+    fun showError(text: String) {
+        val alert = Alert(Alert.AlertType.ERROR);
+        alert.setTitle(MainApplication.ResourceBundle.getString("error.title"));
+        alert.setHeaderText(null);
+        alert.setContentText(text);
         alert.showAndWait();
     }
 
-    fun showWarn(msg: String) {
-        val alert = Alert(Alert.AlertType.WARNING, msg, ButtonType.OK);
+    fun showInfo(text: String) {
+        val alert = Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(MainApplication.ResourceBundle.getString("info.title"));
+        alert.setHeaderText(null);
+        alert.setContentText(text);
         alert.showAndWait();
     }
 
-    fun showInfo(msg: String) {
-        val alert = Alert(Alert.AlertType.INFORMATION, msg, ButtonType.OK);
+    fun showWarn(text: String) {
+        val alert = Alert(Alert.AlertType.WARNING);
+        alert.setTitle(MainApplication.ResourceBundle.getString("warn.title"));
+        alert.setHeaderText(null);
+        alert.setContentText(text);
         alert.showAndWait();
     }
 
@@ -184,7 +193,7 @@ class MainController {
                 return port_str.toInt();
             }
             catch(ex: Exception) {
-                this.showError("Invalid FTP port: " + ex.toString());
+                this.showError(MainApplication.ResourceBundle.getString("error.invalidFtpPort").format(ex.toString()));
                 return null;
             }
         }
@@ -256,14 +265,14 @@ class MainController {
 
                     val reply = client.replyCode;
                     if(!FTPReply.isPositiveCompletion(reply)) {
-                        this@MainController.showError("The FTP server refused connection...");
+                        this@MainController.showError(MainApplication.ResourceBundle.getString("error.ftpServerRefusedConnection"));
                         client.disconnect();
                         return false;
                     }
 
                     client.makeDirectory(ftp_base_dir);
                     if(!Utils.ensureFtpDirectory(client, ftp_base_dir)) {
-                        this@MainController.showError("Unable to ensure FTP directory '" + ftp_base_dir + "': " + client.replyCode.toString());
+                        this@MainController.showError(MainApplication.ResourceBundle.getString("error.unableToEnsureFTPDir").format(ftp_base_dir, client.replyCode.toString()));
                         client.disconnect();
                         return false;
                     }
@@ -275,7 +284,7 @@ class MainController {
                         client.storeFile(ftp_path, strm);
                         strm.close();
                         if(!FTPReply.isPositiveCompletion(client.replyCode)) {
-                            this@MainController.showError("Unable to store FTP file '" + ftp_path + "': " + client.replyCode.toString());
+                            this@MainController.showError(MainApplication.ResourceBundle.getString("error.unableToStoreFTPFile").format(ftp_path, client.replyCode.toString()));
                             client.disconnect();
                             return false;
                         }
@@ -285,7 +294,7 @@ class MainController {
                     return true;
                 }
                 catch(ex: Exception) {
-                    this@MainController.showError("Exception on FTP connection: " + ex.toString());
+                    this@MainController.showError(MainApplication.ResourceBundle.getString("error.exceptionOnFTPConnection").format(ex.toString()));
                     client.disconnect();
                     return false;
                 }
@@ -298,147 +307,158 @@ class MainController {
         }
     }
 
-    private fun tryReadApi(url: String) {
-        val task = object : Task<Unit>() {
-            override fun call() {
-                this.updateMessage("Accessing AmiiboAPI...");
+    fun prepare(stage: Stage) {
+        this.MainStage = stage;
+        println("Resource bundle in controller: ${MainApplication.ResourceBundle.locale}")
 
-                this@MainController.ApiUrlText.setDisable(true);
-                this@MainController.ApiReloadButton.setDisable(true);
-                val api_amiibos = AmiiboAPI.readApi(url);
-                this@MainController.ApiUrlText.setDisable(false);
-                this@MainController.ApiReloadButton.setDisable(false);
-
-                api_amiibos?.let {
-                    this.updateMessage("AmiiboAPI was successfully accessed!");
-                    
-                    Platform.runLater {
-                        this@MainController.Amiibos = api_amiibos;
-
-                        val series_names = api_amiibos.keys.toMutableList();
-                        series_names.sort();
-                        this@MainController.GenerateOneAmiiboSeriesBox.items.setAll(series_names);
-                        this@MainController.GenerateOneAmiiboSeriesBox.selectionModel.select(0);
-                        this@MainController.GenerateSeriesAmiiboSeriesBox.items.setAll(series_names);
-                        this@MainController.GenerateSeriesAmiiboSeriesBox.selectionModel.select(0);
-                    }
+        this.OpenedAmiiboNameText.textProperty().addListener(object : ChangeListener<String> {
+            override fun changed(a: ObservableValue<out String>, old: String, new: String) {
+                if(new.length > 0x14) {
+                    this@MainController.OpenedAmiiboNameText.textProperty().set(old);
+                    this@MainController.showWarn(MainApplication.ResourceBundle.getString("warn.nameTooLong"));
                 }
-                ?: let {
-                    this.updateMessage("AmiiboAPI could not be accessed...");
-                }
+            }
+        });
+
+        this.OpenedAmiiboNameText.setText(MainApplication.ResourceBundle.getString("status.openedAmiiboName"));
+
+        this.StatusLabel.setText(MainApplication.ResourceBundle.getString("status.ready"));
+
+        this.GenerateOneAmiiboSeriesBox.promptText = MainApplication.ResourceBundle.getString("combobox.prompt.selectSeries");
+        this.AmiiboBox.promptText = MainApplication.ResourceBundle.getString("combobox.prompt.selectAmiibo");
+
+        val task = object : Task<Map<String, List<AmiiboAPIEntry>>>() {
+            public override fun call() : Map<String, List<AmiiboAPIEntry>> {
+                this.updateMessage(MainApplication.ResourceBundle.getString("status.loadingAmiiboAPI"));
+                return AmiiboAPI.query();
+            }
+
+            override fun succeeded() {
+                super.succeeded();
+
+                this@MainController.Amiibos = this.getValue();
+                val series_names = this@MainController.Amiibos.keys.toMutableList();
+                series_names.sort();
+                this@MainController.GenerateOneAmiiboSeriesBox.items.setAll(series_names);
+                this@MainController.GenerateSeriesAmiiboSeriesBox.items.setAll(series_names);
+
+                this@MainController.StatusLabel.textProperty().unbind();
+                this@MainController.StatusLabel.setText(MainApplication.ResourceBundle.getString("status.ready"));
+            }
+
+            override fun failed() {
+                super.failed();
+
+                this@MainController.showError(MainApplication.ResourceBundle.getString("error.amiiboApiFailed"));
+                this@MainController.StatusLabel.textProperty().unbind();
+                this@MainController.StatusLabel.setText(MainApplication.ResourceBundle.getString("status.ready"));
+            }
+
+            override fun cancelled() {
+                super.cancelled();
+
+                this@MainController.StatusLabel.textProperty().unbind();
+                this@MainController.StatusLabel.setText(MainApplication.ResourceBundle.getString("status.ready"));
             }
         };
 
         this.StatusLabel.textProperty().bind(task.messageProperty());
 
-        val task_thr = Thread(task);
-        task_thr.setDaemon(true);
-        task_thr.start();
-    }
-
-    fun prepare(stage: Stage) {
-        this.MainStage = stage;
-        this.OpenedAmiibo = null;
-
-        this.tryReadApi(AmiiboAPI.DefaultUrl);
+        val api_thread = Thread(task);
+        api_thread.start();
 
         this.AmiiboOpenButton.setOnAction(object : EventHandler<ActionEvent> {
             override fun handle(event: ActionEvent) {
-                val chooser = DirectoryChooser();
-                val dir = chooser.showDialog(this@MainController.MainStage);
-                if(dir != null) {
-                    val path = Paths.get(dir.toString()).toAbsolutePath().toString();
+                val file_chooser = FileChooser();
+                file_chooser.setTitle("Open virtual amiibo directory");
+                
+                val path = file_chooser.showOpenDialog(this@MainController.MainStage);
+                if(path == null) {
+                    return;
+                }
 
-                    val (status, amiibo) = Amiibo.tryParse(path);
-                    if(amiibo == null) {
-                        this@MainController.showError("Unable to load amiibo:\n" + status.toString());
+                val status = Amiibo.tryParse(path.absolutePath);
+                if(status.first.contains(AmiiboStatusKind.Ok)) {
+                    this@MainController.OpenedAmiiboPath = path.absolutePath;
+                    this@MainController.OpenedAmiibo = status.second!!;
+
+                    this@MainController.OpenedAmiiboNameText.setDisable(false);
+                    this@MainController.OpenedAmiiboUseRandomUuidCheck.setDisable(false);
+                    this@MainController.OpenedAmiiboAreaList.setDisable(false);
+                    this@MainController.AmiiboSaveButton.setDisable(false);
+
+                    this@MainController.OpenedAmiiboNameText.setText(this@MainController.OpenedAmiibo!!.name);
+                    this@MainController.OpenedAmiiboUseRandomUuidCheck.setSelected(this@MainController.OpenedAmiibo!!.use_random_uuid);
+
+                    if(this@MainController.OpenedAmiibo!!.hasAreas()) {
+                        val entries = this@MainController.OpenedAmiibo!!.areas!!.areas;
+                        val entry_names = mutableListOf<String>();
+                        
+                        for(entry in entries) {
+                            val active_str = if(entry.is_active) {
+                                MainApplication.ResourceBundle.getString("checkbox.activeArea");
+                            }
+                            else "";
+
+
+                            entry_names.add(entry.program_id.toString(16) + " (" + entry.access_id.toString(16) + ") " + active_str);
+                        }
+
+                        this@MainController.OpenedAmiiboAreaList.setItems(javafx.collections.FXCollections.observableArrayList(entry_names));
                     }
                     else {
-                        if(status.contains(AmiiboStatusKind.MiiCharInfoNotFound)) {
-                            this@MainController.showWarn("This amiibo has no mii charinfo file.\nIt is still a valid amiibo, emuiibo will generate it on boot.");
-                        }
-                        if(status.contains(AmiiboStatusKind.InvalidNameLength)) {
-                            this@MainController.showWarn("This amiibo had a name that exceeds 10 characters.\nToo long names could cause issues with certain games.");
-                        }
-
-                        this@MainController.OpenedAmiibo = amiibo;
-                        this@MainController.OpenedAmiiboPath = path;
-
-                        this@MainController.OpenedAmiiboNameText.setDisable(false);
-                        this@MainController.OpenedAmiiboNameText.setText(amiibo.name);
-                        this@MainController.OpenedAmiiboUseRandomUuidCheck.setDisable(false);
-                        this@MainController.OpenedAmiiboUseRandomUuidCheck.setSelected(amiibo.use_random_uuid);
-                        this@MainController.OpenedAmiiboAreaList.setDisable(false);
-
-                        if(amiibo.hasAreas()) {
-                            // todo
-                            val area_items = mutableListOf<String>();
-                            for(area in amiibo.areas!!.areas) {
-                                var msg = "Game " + "0x%016X".format(area.program_id.toLong()) + " (" + "0x%08X".format(area.access_id.toInt()) + ")";
-                                if(area.access_id == amiibo.areas!!.current_area_access_id) {
-                                    msg = "[Active area] " + msg;
-                                }
-                                area_items.add(msg);
-                            }
-                            this@MainController.OpenedAmiiboAreaList.items.setAll(area_items);
-                        }
+                        this@MainController.OpenedAmiiboAreaList.setItems(javafx.collections.FXCollections.emptyObservableList<String>());
                     }
+
+                    if(status.first.contains(AmiiboStatusKind.MiiCharInfoNotFound)) {
+                        this@MainController.showWarn(MainApplication.ResourceBundle.getString("warn.noMiiCharinfo"));
+                    }
+                    if(status.first.contains(AmiiboStatusKind.InvalidNameLength)) {
+                        this@MainController.showWarn(MainApplication.ResourceBundle.getString("warn.nameTooLong"));
+                    }
+                }
+                else {
+                    this@MainController.showError(MainApplication.ResourceBundle.getString("error.unableToLoadAmiibo").format(status.first.toString()));
                 }
             }
         });
 
         this.AmiiboSaveButton.setOnAction(object : EventHandler<ActionEvent> {
             override fun handle(event: ActionEvent) {
-                // Validate amiibo name
-                val amiibo_name = this@MainController.OpenedAmiiboNameText.getText() as String;
-                if(amiibo_name.isNullOrEmpty()) {
-                    this@MainController.showError("The amiibo name is null or empty...");
-                    return;
-                }
+                val path = this@MainController.OpenedAmiiboPath;
+                val amiibo = this@MainController.OpenedAmiibo!!;
 
-                this@MainController.OpenedAmiibo!!.name = amiibo_name;
-                this@MainController.OpenedAmiibo!!.use_random_uuid = this@MainController.OpenedAmiiboUseRandomUuidCheck.isSelected();
-                if(this@MainController.OpenedAmiibo!!.save(this@MainController.OpenedAmiiboPath)) {
-                    this@MainController.showInfo("The virtual amiibo was successfully updated!");
-
-                    this@MainController.OpenedAmiibo = null;
-                    this@MainController.OpenedAmiiboNameText.setText("");
-                    this@MainController.OpenedAmiiboNameText.setDisable(true);
-                    this@MainController.OpenedAmiiboUseRandomUuidCheck.setSelected(false);
-                    this@MainController.OpenedAmiiboUseRandomUuidCheck.setDisable(true);
-                    this@MainController.OpenedAmiiboAreaList.items.setAll(listOf<String>());
-                    this@MainController.OpenedAmiiboAreaList.setDisable(true);
+                val status = amiibo.save(path);
+                if(!status) {
+                    this@MainController.showError(MainApplication.ResourceBundle.getString("error.unableToSaveAmiibo").format(status.toString()));
                 }
                 else {
-                    this@MainController.showError("The virtual amiibo could not be updated...");
+                    this@MainController.showInfo(MainApplication.ResourceBundle.getString("info.successfullySaved"));
                 }
             }
         });
 
         this.OpenedAmiiboNameText.textProperty().addListener(object : ChangeListener<String?> {
             override fun changed(a: ObservableValue<out String?>, old: String?, new: String?) {
-                if(new!!.length > Amiibo.NameMaxLength) {
+                if(new != null && new.length > Amiibo.NameMaxLength) {
                     val str = new.substring(0, Amiibo.NameMaxLength);
                     this@MainController.OpenedAmiiboNameText.setText(str);
                 }
             }
         });
 
-        this.AboutButton.setOnAction(object : EventHandler<ActionEvent> {
-            override fun handle(event: ActionEvent) {
-                showInfo(this@MainController.MainStage.title);
-                
-                MainApplication.HostServices.showDocument("https://github.com/XorTroll/emuiibo");
+        AboutButton.setOnAction {
+            try {
+                MainApplication.HostServices.showDocument("https://github.com/XorTroll/emuiibo")
+            } catch (e: Exception) {
+                // Fallback in case HostServices is not available
+                val alert = Alert(Alert.AlertType.INFORMATION)
+                alert.title = MainApplication.ResourceBundle.getString("info.title")
+                alert.headerText = null
+                alert.contentText = "GitHub: https://github.com/XorTroll/emuiibo"
+                alert.showAndWait()
             }
-        });
-
-        this.ApiReloadButton.setOnAction(object : EventHandler<ActionEvent> {
-            override fun handle(event: ActionEvent) {
-                this@MainController.tryReadApi(this@MainController.ApiUrlText.getText());
-            }
-        });
-        
-        this.ApiUrlText.setText(AmiiboAPI.DefaultUrl);
+        }
 
         this.GenerateOneAmiiboSeriesBox.selectionModel.selectedItemProperty().addListener(object : ChangeListener<String?> {
             override fun changed(a: ObservableValue<out String?>, old: String?, new: String?) {
@@ -472,7 +492,7 @@ class MainController {
 
                 val amiibo_name = this@MainController.AmiiboNameText.getText() as String;
                 if(amiibo_name.isNullOrEmpty()) {
-                    this@MainController.showError("The virtual amiibo name is null or empty...");
+                    this@MainController.showError(MainApplication.ResourceBundle.getString("error.amiiboNameNull"));
                     return;
                 }
 
@@ -483,11 +503,11 @@ class MainController {
                     this@MainController.AmiiboDirectoryText.getText()
                 };
                 if(amiibo_dir.isNullOrEmpty()) {
-                    this@MainController.showError("The virtual amiibo directory is null or empty...");
+                    this@MainController.showError(MainApplication.ResourceBundle.getString("error.amiiboDirNull"));
                     return;
                 }
                 else if(amiibo_dir.contains("/") || amiibo_dir.contains("\\")) {
-                    this@MainController.showError("The virtual amiibo directory contains invalid characters...");
+                    this@MainController.showError(MainApplication.ResourceBundle.getString("error.amiiboDirInvalidChars"));
                     return;
                 }
 
@@ -508,18 +528,18 @@ class MainController {
 
                     val amiibo_path = Paths.get(path, base_path).toString();
                     val pres_amiibo_path = Paths.get(pres_path, base_path).toString();
-                    if(this@MainController.showYesNo("The virtual amiibo will be generated at:\n" + pres_amiibo_path + "/{amiibo.json, amiibo.flag, ...}\n\nProceed with generation?")) {
+                    if(this@MainController.showYesNo(MainApplication.ResourceBundle.getString("confirm.generateOne").format(pres_amiibo_path))) {
                         val selected_amiibo = this@MainController.getSelectedAmiibo();
                         if(selected_amiibo != null) {
                             if(this@MainController.generateAmiibo(amiibo_path, base_path, selected_amiibo, amiibo_name, use_random_uuid, save_image, is_ftp, ftp_addr, ftp_port)) {
-                                this@MainController.showInfo("The virtual amiibo was successfully generated!");
+                                this@MainController.showInfo(MainApplication.ResourceBundle.getString("info.amiiboGenerated"));
                             }
                             else {
-                                this@MainController.showError("The virtual amiibo could not be generated...");
+                                this@MainController.showError(MainApplication.ResourceBundle.getString("error.amiiboGenerateFailed"));
                             }
                         }
                         else {
-                            this@MainController.showError("There is no virtual amiibo selected...");
+                            this@MainController.showError(MainApplication.ResourceBundle.getString("error.amiiboUpdateFailed"));
                         }
                     }
                 }
@@ -541,32 +561,46 @@ class MainController {
                 }
 
                 val use_random_uuid = this@MainController.GenerateAllUseRandomUuidCheck.isSelected();
-                val save_image = this@MainController.GenerateAllImageSaveCheck.isSelected();
+                val save_images = this@MainController.GenerateAllImageSaveCheck.isSelected();
 
                 val paths = this@MainController.chooseBaseAmiiboPath(is_ftp);
                 if(paths != null) {
                     val (path, pres_path) = paths;
-                    if(this@MainController.showYesNo("The virtual amiibos will be generated at:\n" + pres_path + "/<series>/<amiibo>/{amiibo.json, amiibo.flag, ...}\n\nProceed with generation?")) {
-                        for(amiibos in this@MainController.Amiibos.values) {
-                            for(amiibo in amiibos) {
-                                val amiibo_name = Utils.produceAmiiboName(amiibo.amiibo_name);
-                                val base_path = Paths.get(Utils.ensureValidFileDirectoryName(amiibo.series_name), Utils.ensureValidFileDirectoryName(amiibo.amiibo_name)).toString();
-
+                    if(this@MainController.showYesNo(MainApplication.ResourceBundle.getString("confirm.generateAll").format(pres_path))) {
+                        var success = true;
+                        for(series in this@MainController.Amiibos) {
+                            val series_name = series.key;
+                            val series_amiibos = series.value;
+                            
+                            for(amiibo in series_amiibos) {
+                                val base_path = Utils.ensureValidFileDirectoryName(series_name) + "/" + Utils.ensureValidFileDirectoryName(amiibo.amiibo_name);
                                 val amiibo_path = Paths.get(path, base_path).toString();
-                                val pres_amiibo_path = Paths.get(pres_path, base_path).toString();
                                 
-                                if(this@MainController.generateAmiibo(amiibo_path, base_path, amiibo, amiibo_name, use_random_uuid, save_image, is_ftp, ftp_addr, ftp_port)) {
-                                    System.out.println("Generated virtual amiibo ('" + amiibo_name + "'): '" + pres_amiibo_path + "'");
-                                }
-                                else {
-                                    this@MainController.showError("The following virtual amiibo could not be generated:\n'" + pres_amiibo_path + "'");
+                                if(!this@MainController.generateAmiibo(amiibo_path, base_path, amiibo, amiibo.amiibo_name, use_random_uuid, save_images, is_ftp, ftp_addr, ftp_port)) {
+                                    success = false;
+                                    break;
                                 }
                             }
+                            
+                            if(!success) {
+                                break;
+                            }
                         }
-
-                        this@MainController.showInfo("The virtual amiibos were successfully generated!");
+                        
+                        if(success) {
+                            this@MainController.showInfo(MainApplication.ResourceBundle.getString("info.allAmiibosGenerated"));
+                        }
+                        else {
+                            this@MainController.showError(MainApplication.ResourceBundle.getString("error.couldNotGenerateVirtualAmiibo"));
+                        }
                     }
                 }
+            }
+        });
+
+        this.GenerateSeriesAmiiboSeriesBox.selectionModel.selectedItemProperty().addListener(object : ChangeListener<String?> {
+            override fun changed(a: ObservableValue<out String?>, old: String?, new: String?) {
+                // Just update the selection
             }
         });
 
@@ -584,30 +618,42 @@ class MainController {
                     return;
                 }
 
+                val series_name = this@MainController.GenerateSeriesAmiiboSeriesBox.selectionModel.getSelectedItem();
+                if(series_name == null) {
+                    this@MainController.showError(MainApplication.ResourceBundle.getString("error.noSeriesWasSelected"));
+                    return;
+                }
+
                 val use_random_uuid = this@MainController.GenerateSeriesUseRandomUuidCheck.isSelected();
-                val save_image = this@MainController.GenerateSeriesImageSaveCheck.isSelected();
+                val save_images = this@MainController.GenerateSeriesImageSaveCheck.isSelected();
 
                 val paths = this@MainController.chooseBaseAmiiboPath(is_ftp);
                 if(paths != null) {
                     val (path, pres_path) = paths;
-                    if(this@MainController.showYesNo("The virtual amiibos will be generated at:\n" + pres_path + "/<amiibo>/{amiibo.json, amiibo.flag, ...}\n\nProceed with generation?")) {
-                        val series_name = this@MainController.GenerateSeriesAmiiboSeriesBox.selectionModel.selectedItem;
-                        for(amiibo in this@MainController.Amiibos.get(series_name)!!) {
-                            val amiibo_name = Utils.produceAmiiboName(amiibo.amiibo_name);
-                            val base_path = Utils.ensureValidFileDirectoryName(amiibo.amiibo_name);
-
-                            val amiibo_path = Paths.get(path, base_path).toString();
-                            val pres_amiibo_path = Paths.get(pres_path, base_path).toString();
+                    if(this@MainController.showYesNo(MainApplication.ResourceBundle.getString("confirm.generateSeries").format(pres_path))) {
+                        val series_amiibos = this@MainController.Amiibos.get(series_name);
+                        if(series_amiibos != null) {
+                            var success = true;
+                            for(amiibo in series_amiibos) {
+                                val base_path = Utils.ensureValidFileDirectoryName(amiibo.amiibo_name);
+                                val amiibo_path = Paths.get(path, base_path).toString();
+                                
+                                if(!this@MainController.generateAmiibo(amiibo_path, base_path, amiibo, amiibo.amiibo_name, use_random_uuid, save_images, is_ftp, ftp_addr, ftp_port)) {
+                                    success = false;
+                                    break;
+                                }
+                            }
                             
-                            if(this@MainController.generateAmiibo(amiibo_path, base_path, amiibo, amiibo_name, use_random_uuid, save_image, is_ftp, ftp_addr, ftp_port)) {
-                                System.out.println("Generated virtual amiibo ('" + amiibo_name + "'): '" + pres_amiibo_path + "'");
+                            if(success) {
+                                this@MainController.showInfo(MainApplication.ResourceBundle.getString("info.seriesAmiibosGenerated"));
                             }
                             else {
-                                this@MainController.showError("The following virtual amiibo could not be generated:\n'" + pres_amiibo_path + "'");
+                                this@MainController.showError(MainApplication.ResourceBundle.getString("error.couldNotGenerateVirtualAmiibo"));
                             }
                         }
-
-                        this@MainController.showInfo("The virtual amiibos were successfully generated!");
+                        else {
+                            this@MainController.showError(MainApplication.ResourceBundle.getString("error.couldNotFindSelectedSeries"));
+                        }
                     }
                 }
             }
