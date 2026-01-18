@@ -5,6 +5,7 @@ import org.apache.commons.io.FilenameUtils
 import org.apache.commons.io.IOUtils
 import org.apache.commons.net.ftp.FTPClient
 import org.apache.commons.net.ftp.FTPReply
+import java.net.URI
 import java.net.URL
 import java.io.File
 import java.io.FileOutputStream
@@ -25,7 +26,8 @@ class Utils {
         }
 
         fun netDownloadString(url: String) : String {
-            val connection = URL(url).openConnection().apply {
+            val uri = URI.create(url)
+            val connection = uri.toURL().openConnection().apply {
                 connectTimeout = 10000 // connectTimeoutMs
                 readTimeout = 10000 // readTimeoutMs
             }
@@ -36,7 +38,8 @@ class Utils {
         }
 
         fun netDownloadFile(url: String, path: String) {
-            FileUtils.copyURLToFile(URL(url), File(path), 10000, 10000);
+            val uri = URI.create(url)
+            FileUtils.copyURLToFile(uri.toURL(), File(path), 10000, 10000);
         }
 
         fun unaccentString(str: String) : String {
