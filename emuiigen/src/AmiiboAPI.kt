@@ -11,7 +11,7 @@ import org.apache.commons.io.IOUtils
 
 class AmiiboAPI {
     companion object {
-        val DefaultUrl = "https://www.amiiboapi.com/api/amiibo/";
+        val DefaultUrl = "https://www.amiiboapi.org/api/amiibo/";
 
         fun parseApiJson(json_data: JSONObject) : Map<String, List<AmiiboAPIEntry>>? {
             val json_entries = json_data.getJSONArray("amiibo");
