@@ -845,8 +845,7 @@ class EmuiiboOverlay : public tsl::Overlay {
 
             g_Version = emu::GetVersion();
             if(!g_Version.EqualsExceptBuild(ExpectedVersion)) {
-                g_InitializationStatus = InitializationStatus::OkVersionMismatch;;
-                return;
+                g_InitializationStatus = InitializationStatus::OkVersionMismatch;
             }
 
             g_InitializationStatus = InitializationStatus::Ok;
