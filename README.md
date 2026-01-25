@@ -189,7 +189,7 @@ The overlay's code serves a good example to see how to control emuiibo with libn
 
 - Everyone who contributed to the original **nfp-mitm** project (and other forks): *Subv, ogniK, averne, spx01, SciresM*
 
-- **AmiiboAPI** web API, which is used by `emuiigen` to get a proper, full amiibo list, in order to generate virtual amiibos.
+- [**AmiiboAPI**](https://amiiboapi.org/) web API, which is used by `emuiigen` to get a proper, full amiibo list, in order to generate virtual amiibos.
 
 - [**3dbrew**](https://www.3dbrew.org/wiki/Amiibo) for their detailed documentation of amiibos, even though some aspects are different on the Switch.
 

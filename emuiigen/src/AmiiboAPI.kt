@@ -12,7 +12,7 @@ import java.nio.charset.StandardCharsets
 
 class AmiiboAPI {
     companion object {
-        val DefaultUrl = "https://www.amiiboapi.com/api/amiibo/";
+        val DefaultUrl = "https://www.amiiboapi.org/api/amiibo/";
 
         fun query(): Map<String, List<AmiiboAPIEntry>> {
             return readApi(DefaultUrl) ?: mapOf()
