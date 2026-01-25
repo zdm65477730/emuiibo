@@ -26,25 +26,11 @@ jobs:
           make install -j$(nproc)
         shell: bash
 
-      - name: Checkout latest code
-        uses: actions/checkout@v5
-        with:
-          ref: master
-          clean: true
-          fetch-depth: 0
-          fetch-tags: true
-          submodules: recursive
-
-      - name: Workaround for RUST toolchain
-        run: |
-          sed -i 's/channel = "nightly"/channel = "nightly-2024-01-01"/' rust-toolchain.toml
-        shell: bash
-
       - name: Prepare Rust
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly
+          toolchain: nightly-2024-01-01
           override: true
 
       - name: Prepare rust-src
@@ -58,6 +44,15 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+
+      - name: Checkout latest code
+        uses: actions/checkout@v5
+        with:
+          ref: master
+          clean: true
+          fetch-depth: 0
+          fetch-tags: true
+          submodules: recursive
 
       - name: Setup ENV parameters
         run: |
