@@ -40,7 +40,7 @@ include $(DEVKITPRO)/libnx/switch_rules
 APP_TITLE	?= 	emuiibo
 VER_MAJOR	:=	1
 VER_MINOR	:=	1
-VER_MICRO	:=	2
+VER_MICRO	:=	3
 APP_VERSION :=	v$(VER_MAJOR).$(VER_MINOR).$(VER_MICRO)
 ifeq ($(RELEASE),)
 	APP_VERSION	:=	$(APP_VERSION)-$(shell git describe --always)

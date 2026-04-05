@@ -1,5 +1,9 @@
-# `v1.1.2`
+# `v1.1.3`
 
-## emuiibo
+## overlay
 
-- Updated for the latest changes in Rust libraries
+- Now multiple init/error messages are used if initialization fails (more specific of the actual failure).
+
+## emuiigen
+
+- Added option to use a custom AmiiboAPI endpoint + changed the default endpoint to [the new host endpoint](https://amiiboapi.org/).
