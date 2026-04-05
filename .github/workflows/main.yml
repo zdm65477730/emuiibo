@@ -27,7 +27,7 @@ jobs:
         shell: bash
 
       - name: Prepare Rust
-        uses: actions-rs/toolchain@v1.0.6
+        uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: nightly-2025-10-10
