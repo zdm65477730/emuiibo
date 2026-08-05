@@ -30,13 +30,15 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly
+          # Pinned nightly: newer nightlies renamed Layout::dangling to dangling_ptr
+          # (breaks linked_list_allocator 0.10.5) and changed the catch_unwind
+          # intrinsic to return bool (breaks unwinding 0.2.8)
+          toolchain: nightly-2025-11-01
           override: true
 
       - name: Prepare rust-src
         run: |
-          rustup update nightly
-          rustup component add rust-src
+          rustup component add rust-src --toolchain nightly-2025-11-01
 
       - name: Prepare cargo-nx
         run: cargo install cargo-nx --git https://github.com/aarch64-switch-rs/cargo-nx
