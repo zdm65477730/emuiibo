@@ -27,16 +27,9 @@ jobs:
         shell: bash
 
       - name: Prepare Rust
-        uses: actions-rs/toolchain@v1.0.6
+        uses: dtolnay/rust-toolchain@nightly
         with:
-          profile: minimal
-          toolchain: nightly
-          override: true
-
-      - name: Prepare rust-src
-        run: |
-          rustup update nightly
-          rustup component add rust-src
+          components: rust-src
 
       - name: Prepare cargo-nx
         run: cargo install cargo-nx --git https://github.com/aarch64-switch-rs/cargo-nx
