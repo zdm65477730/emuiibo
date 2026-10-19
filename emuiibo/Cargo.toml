@@ -175,3 +175,6 @@ kernel_version = "3.0"
 
 [profile.dev]
 lto = true
+
+[patch.crates-io]
+unwinding = { git = "https://github.com/nbdd0121/unwinding", rev = "afb810fb2d65eb69b5e31d59386e68fb2b12d9f3" }
